@@ -39,7 +39,7 @@ do
 		../replace_ini_value.sh $ini Blocks max_treelevel $j
 		../replace_ini_value.sh $ini Blocks min_treelevel $j
 
-		echo $mpi ./wabbit 2D $ini --memory=5.0GB
+		$mpi ./wabbit 2D $ini --memory=5.0GB
 		cd ..
 	done
 done
