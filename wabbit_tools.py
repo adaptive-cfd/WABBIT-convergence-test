@@ -457,6 +457,67 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
             plt.savefig( file.replace('.h5','-grid.pdf') )
 
 #%%
+def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
+    """ Compute the error (in some norm) wrt a flusi field.
+    Useful for example for the half-swirl test where no exact solution is available
+    at mid-time (the time of maximum distortion)
+
+    NOTE: We require the wabbit-field to be already full (but still in block-data) so run
+    ./wabbit-post 2D --sparse-to-dense input_00.h5 output_00.h5
+    first
+    """
+    import numpy as np
+    import insect_tools
+    import matplotlib.pyplot as plt
+
+    # read in flusi's reference solution
+    time_ref, box_ref, origin_ref, data_ref = insect_tools.read_flusi_HDF5( fname_flusi )
+    ny = data_ref.shape[1]
+
+    # wabbit field to be analyzed: note has to be full already
+    time, x0, dx, box, data, treecode = read_wabbit_hdf5( fname_wabbit )
+    Bs = data.shape[1]
+    Jflusi = (np.log2(ny/(Bs-1)))
+    print("Flusi resolution: %i %i %i so desired level is Jmax=%f" % (data_ref.shape[0], data_ref.shape[2], data_ref.shape[2], Jflusi) )
+
+    # squeeze 3D flusi field (where dim0 == 1) to true 2d data
+    data_ref = data_ref[0,:,:].copy()
+    origin_ref = origin_ref[1:2].copy()
+    box_ref = box_ref[1:2].copy()
+
+    # convert wabbit to dense field
+    data_dense, box_dense = dense_matrix( x0, dx, data, treecode )
+
+    if data_dense.shape[0] < data_ref.shape[0]:
+        # both datasets have different size
+        s = int( data_ref.shape[0] / data_dense.shape[0] )
+        data_ref = data_ref[::s, ::s].copy()
+
+    # we need to transpose the flusi data...
+    data_ref = data_ref.transpose()
+
+    err = np.ndarray.flatten(data_dense-data_ref)
+    exc = np.ndarray.flatten(data_ref)
+
+    err = np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm)
+
+    return err
+
+#    print("%e" % (err) )
+#
+#    plt.figure()
+#    plt.pcolormesh(data_ref)
+#
+#    plt.figure()
+#    plt.pcolormesh(data_dense)
+#
+#    plt.figure()
+#    plt.pcolormesh(data_dense-data_ref)
+
+#    print(box_dense)
+#    print(box_ref)
+
+#%%
 def to_dense_grid( fname_in, fname_out):
     """ Convert a WABBIT grid to a full dense grid in a single matrix.
 
@@ -489,7 +550,8 @@ def dense_matrix(  x0, dx, data, treecode ):
     We asssume here that interpolation has already been performed, i.e. all
     blocks are on the same (finest) level.
 
-    returns the full matrix and the domain size
+    returns the full matrix and the domain size. Note matrix is periodic and can
+    directly be compared to FLUSI-style results (x=L * 0:nx-1/nx)
     """
     # number of blocks
     N = data.shape[0]
@@ -519,7 +581,8 @@ def dense_matrix(  x0, dx, data, treecode ):
         ix0 = int(x0[i,0]/dx[i,0])
         iy0 = int(x0[i,1]/dx[i,1])
 
-        # copy block content to data field
+        # copy block content to data field. Note we skip the last points, which
+        # are the redundant nodes.
         field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
 
     # domain size
@@ -527,13 +590,4 @@ def dense_matrix(  x0, dx, data, treecode ):
 
     return(field, box)
 
-#plot_wabbit_file('B_SWIRL/adaptive1_swirl-tough_0_5.0e-5/phi_000000000000.h5', cmap='gray', contour=True, mark_blocks=True)
-#plot_wabbit_file('B_SWIRL/adaptive1_swirl-tough_0_5.0e-5/phi_000010000000.h5', cmap='gray', contour=True, mark_blocks=True)
-#plot_wabbit_dir('C_SWIRL_new/dx1_equi_4th-4th-4th_4/', savepng=True)
-#plot_wabbit_dir('A_CONV/adapt3_4_3.45510729e-06/', savepng=True)
-#err = wabbit_error('../exact/')
-#print(err)
-
-#to_dense_grid('../shear-mario/fixed/Uy_000003000000.h5', '../shear-mario/fixed/denseUy_000003000000.h5')
-#to_dense_grid('../shear-mario/1e-2/Uy_000004000000.h5', '../shear-mario/1e-2/denseUy_000004000000.h5')
-#to_dense_grid('../shear-mario/1e-2/Ux_000004000000.h5', '../shear-mario/1e-2/denseUx_000004000000.h5')
+#wabbit_error_vs_flusi('equi/phi_000002500000.h5', 'flusiphi_000002500000.h5')
