@@ -3,15 +3,19 @@
 ini="halfswirl.ini"
 # we fix the upper limit to 1024 points
 blocksize=( 17 33 65 )
-minlevel=( 2 2 2 )
-maxlevel=( 6 5 4 )
+#minlevel=( 2 2 2 )
+#maxlevel=( 6 5 4 )
+
+minlevel=( 7 6 5 )
+maxlevel=( 8 7 6 )
+
 # resolution (in points) is N = (Bs-1)*2^Jmax
 
 pre=equidistant
 
 
 # delete all data:
-rm -rf ${pre}_*
+#rm -rf ${pre}_*
 
 
 for (( a=0; a<=2; a++ ))
