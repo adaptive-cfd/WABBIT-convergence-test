@@ -51,17 +51,19 @@ def read_wabbit_hdf5(file):
     return time, x0, dx, box, data, treecode
 
 
-def wabbit_error(dir, show=False, norm=2):
+def wabbit_error(dir, show=False, norm=2, file=None):
     import numpy as np
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
     import glob
 
-    files = glob.glob(dir+'/phi_*.h5')
-    files.sort()
+    if file is None:
+        files = glob.glob(dir+'/phi_*.h5')
+        files.sort()
+        file = files[-1]
 
     # read data
-    time, x0, dx, box, data, treecode = read_wabbit_hdf5(files[-1])
+    time, x0, dx, box, data, treecode = read_wabbit_hdf5(file)
     # get number of blocks and blocksize
     N, Bs = data.shape[0], data.shape[1]
 
@@ -272,6 +274,31 @@ def fetch_jmax_dir(dir):
     return( float(eps) )
 
 
+def fetch_compression_rate_dir(dir):
+    import numpy as np
+    if dir[-1] != '/':
+        dir = dir+'/'
+
+    d = np.loadtxt(dir+'timesteps_info.t')
+    d2 = np.loadtxt(dir+'blocks_per_mpirank_rhs.t')
+
+    # how many blocks was the RHS evaluated on, on all mpiranks?
+    nblocks_rhs = np.sum( d2[:,2:], axis=1 )
+
+    # what was the maximum number in time?
+    it = np.argmax( nblocks_rhs )
+
+    # what was the maximum level at that time?
+#    Jmax = d[it,-1]
+    Jmax = fetch_jmax_dir(dir)
+
+
+    # compute compression rate w.r.t. this level
+    compression = nblocks_rhs[it] / ((2**Jmax)**2)
+
+    return( compression )
+
+
 def convergence_order(N, err):
     import numpy as np
 
@@ -311,6 +338,7 @@ def treecode_level( tc ):
     return(level)
 
 
+
 # for a treecode list, return max and min level found
 def get_max_min_level( treecode ):
     import numpy as np
@@ -328,8 +356,8 @@ def get_max_min_level( treecode ):
 
 
 
-def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=None, title=True, mark_blocks=True,
-                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300 ):
+def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=None, caxis_symmetric=False, title=True, mark_blocks=True,
+                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300, block_edge_color='k', shading='flat' ):
     """ Read a (2D) wabbit file and plot it as a pseudocolor plot.
 
     Keyword arguments:
@@ -340,8 +368,6 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
     import numpy as np
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
-
-
     import h5py
 
     # read procs table, if we want to draw the grid only
@@ -376,42 +402,51 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
     jmin, jmax = get_max_min_level( treecode )
 
     for i in range(N):
-        if not gridonly:
-            [X,Y] = np.meshgrid( np.arange(Bs)*dx[i,0]+x0[i,0], np.arange(Bs)*dx[i,1]+x0[i,1])
-            block = data[i,:,:].copy().transpose()
-            if not contour:
-                hplot = ax.pcolormesh( Y, X, block, cmap=cmap, shading='flat' )
-            else:
-                hplot = ax.contour( Y, X, block, [0.1, 0.2, 0.5, 0.75] )
+#        if not gridonly:
+        [X, Y] = np.meshgrid( np.arange(Bs)*dx[i,0]+x0[i,0], np.arange(Bs)*dx[i,1]+x0[i,1])
+        block = data[i,:,:].copy().transpose()
+        if not contour:
+            hplot = ax.pcolormesh( Y, X, block, cmap=cmap, shading=shading )
+        else:
+            hplot = ax.contour( Y, X, block, [0.1, 0.2, 0.5, 0.75] )
 
-            # use rasterization for the patch we just draw
-            hplot.set_rasterized(True)
+        # use rasterization for the patch we just draw
+        hplot.set_rasterized(True)
 
-            # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
-            # that they all use the same.
-            h.append(hplot)
-            a = hplot.get_clim()
-            c1.append(a[0])
-            c2.append(a[1])
+        # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
+        # that they all use the same.
+        h.append(hplot)
+        a = hplot.get_clim()
+        c1.append(a[0])
+        c2.append(a[1])
 
         if mark_blocks and not gridonly:
-            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor='k' ))
+            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor=block_edge_color ))
 
         if gridonly:
-            level = treecode_level( treecode[i,:] )
-            color = 0.9 - 0.75*(level-jmin)/(jmax-jmin)
-            color = plt.cm.jet( procs[i]/np.max(procs) )
+#            level = treecode_level( treecode[i,:] )
+#            color = 0.9 - 0.75*(level-jmin)/(jmax-jmin)
+
+            colormap_function = plt.get_cmap('Paired')
+            color = colormap_function( procs[i]/np.max(procs) )
+
 #            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=[color,color,color], edgecolor='k' ))
-            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=color, edgecolor='k' ))
+            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=color, edgecolor=block_edge_color ))
 
 
     if not gridonly:
         # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
         # that they all use the same.
         if caxis is None:
-            # automatic colorbar, using min and max throughout all patches
-            for hplots in h:
-                hplots.set_clim( (min(c1),max(c2))  )
+            if not caxis_symmetric:
+                # automatic colorbar, using min and max throughout all patches
+                for hplots in h:
+                    hplots.set_clim( (min(c1),max(c2))  )
+            else:
+                # automatic colorbar, but symmetric, using the SMALLER of both absolute values
+                c= min( [abs(min(c1)), max(c2)] )
+                for hplots in h:
+                    hplots.set_clim( (-c,c)  )
         else:
             # set fixed (user defined) colorbar for all patches
             for hplots in h:
@@ -492,6 +527,10 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
         # both datasets have different size
         s = int( data_ref.shape[0] / data_dense.shape[0] )
         data_ref = data_ref[::s, ::s].copy()
+        raise ValueError("ERROR! Both fields are not a the same resolutionn")
+
+    if data_dense.shape[0] > data_ref.shape[0]:
+        raise ValueError("ERROR! The reference solution is not fine enough for the comparison")
 
     # we need to transpose the flusi data...
     data_ref = data_ref.transpose()
@@ -562,6 +601,7 @@ def dense_matrix(  x0, dx, data, treecode ):
     jmin, jmax = get_max_min_level( treecode )
     if jmin != jmax:
         print("ERROR! not an equidistant grid yet...")
+        raise ValueError("ERROR! not an equidistant grid yet...")
 
     # note skipping of redundant points, hence the -1
     ny = int( np.sqrt(N)*(Bs-1) )
@@ -590,4 +630,7 @@ def dense_matrix(  x0, dx, data, treecode ):
 
     return(field, box)
 
-#wabbit_error_vs_flusi('equi/phi_000002500000.h5', 'flusiphi_000002500000.h5')
+#import matplotlib.pyplot as plt
+#time, x0, dx, box, data, treecode = read_wabbit_hdf5('/home/engels/dev/WABBIT4-new-physics/phil/Ux_000000000000.h5')
+#field, box = dense_matrix(  x0, dx, data, treecode )
+#plt.plot(field[:,0], 'o')
