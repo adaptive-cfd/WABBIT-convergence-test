@@ -37,7 +37,7 @@ def do_test(rootdir, J, name, ax1, ax2):
 
 
     ax1.loglog( EPS, err, label=name, marker='o')
-    ax2.loglog( EPS, Nblocks, label=name, marker='o')
+    ax2.semilogx( EPS, Nblocks, label=name, marker='o')
 
 
 #%%
@@ -60,7 +60,7 @@ do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33", "3", "$J_\mathrm{max}=3$"
 
 
 plt.figure(1)
-a = 0.95
+a = 0.75
 plt.gcf().set_size_inches( [6.71*a, 4.91*a] )
 plt.gcf().subplots_adjust(top=0.91, bottom=0.13,left=0.14, right=0.97)
 plt.title('$T_{a}=5$, $\\beta=10^{-2}$, $B_s =33$')
@@ -78,7 +78,7 @@ plt.gcf().savefig('halfswirl-adaptive-eps-bs33.pdf')
 
 
 plt.figure(2)
-a = 0.95
+a = 0.75
 plt.gcf().set_size_inches( [6.71*a, 4.91*a] )
 plt.gcf().subplots_adjust( top=0.91, bottom=0.13, left=0.14, right=0.97 )
 

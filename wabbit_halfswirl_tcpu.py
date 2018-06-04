@@ -71,12 +71,13 @@ plt.rcParams["font.family"] = 'serif'
 plt.rcParams["font.serif"] = 'Times'
 
 do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*JmaxInf*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=14$")
+do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax7*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=7$")
+do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax6*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=6$")
+do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax5*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=5$")
+do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax4*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=4$")
+
 do_test("C_HALFSWIRL_newcode/equidistant_halfswirl_Bs33*", "equidistant, $\\beta=10^{-2}$")
 
-do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax4*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=4$")
-do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax5*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=5$")
-do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax6*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=6$")
-do_test("C_HALFSWIRL_newcode/adaptive_halfswirl_Bs33*Jmax7*", "adaptive, $\\beta=10^{-2}$, $J_\mathrm{max}=7$")
 
 #ref='ref_flusi/T10_4096_upsampled_double/flusiphi_000005000000.h5'
 #do_test2("D_HALFSWIRL_t10/adaptive*_half*", '50', "adaptive $B_s=33$, $T_a=10$, $J_\mathrm{max}=\infty$", ref)
@@ -92,10 +93,11 @@ from matplotlib.offsetbox import AnchoredText
 anchored_text = AnchoredText('D', loc=2, frameon=False, borderpad=0.3, pad=0, prop=dict(size=22,family='serif'))
 plt.gca().add_artist(anchored_text)
 
-a = 0.95
+a = 0.75
 plt.gcf().set_size_inches( [6.71*a, 4.91*a] )
 plt.gcf().subplots_adjust(top=0.91, bottom=0.13,left=0.14, right=0.97)
 
+plt.xlim([1e-8, 1.0e0])
 plt.title('8 CPU, $B_s=33$, $T_a=5$')
 plt.grid()
 plt.ylabel('$t_\mathrm{cpu}$')

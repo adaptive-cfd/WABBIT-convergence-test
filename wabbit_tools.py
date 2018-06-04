@@ -190,7 +190,6 @@ def fetch_dt_dir(dir):
 
 
 def fetch_Nblocks_dir(dir, return_Bs=False):
-    import glob
     import numpy as np
     import os.path
 
@@ -198,15 +197,6 @@ def fetch_Nblocks_dir(dir, return_Bs=False):
         dir = dir
     else:
         dir = dir+'/'
-
-    files = glob.glob(dir+'/phi_*.h5')
-    files.sort()
-
-    # read data
-    time, x0, dx, box, data, treecode = read_wabbit_hdf5(files[-1])
-
-    # get number of blocks and blocksize
-    N, Bs = data.shape[0], data.shape[1]
 
     if os.path.isfile(dir+'timesteps_info.t'):
         d = np.loadtxt(dir+'timesteps_info.t')
@@ -220,10 +210,41 @@ def fetch_Nblocks_dir(dir, return_Bs=False):
         raise ValueError('timesteps_info.t not found in dir.'+dir)
 
     if (return_Bs):
+        # get blocksize
+        Bs = fetch_Bs_dir(dir)
         return(N,Bs)
     else:
         return(N)
 
+
+
+def fetch_Nblocks_RHS_dir(dir, return_Bs=False):
+    import numpy as np
+    import os.path
+
+    if dir[-1] == '/':
+        dir = dir
+    else:
+        dir = dir+'/'
+
+    if os.path.isfile(dir+'blocks_per_mpirank_rhs.t'):
+        d = np.loadtxt(dir+'blocks_per_mpirank_rhs.t')
+        if d.shape[1] == 10:
+            # old format requires computing the number...
+            d[:,2] = np.sum( d[:,2:], axis=1 )
+            N = np.max(d[:,2])
+        else:
+            # new format saves Number of blocks
+            N = np.max(d[:,2])
+    else:
+        raise ValueError('blocks_per_mpirank_rhs.t not found in dir.'+dir)
+
+    if (return_Bs):
+        # get blocksize
+        Bs = fetch_Bs_dir(dir)
+        return(N,Bs)
+    else:
+        return(N)
 
 def fetch_eps_dir(dir):
     import glob
@@ -248,6 +269,30 @@ def fetch_eps_dir(dir):
     eps = eps.replace(';','')
 
     return( float(eps) )
+
+def fetch_Bs_dir(dir):
+    import glob
+    import configparser
+
+    if dir[-1] == '/':
+        dir = dir
+    else:
+        dir = dir+'/'
+
+    inifile = glob.glob(dir+'*.ini')
+
+    if (len(inifile) > 1):
+        print('ERROR MORE THAN ONE INI FILE')
+
+    print(inifile[0])
+    config = configparser.ConfigParser()
+    config.read(inifile[0])
+
+
+    Bs=config.get('Blocks','number_block_nodes',fallback='0')
+    Bs = Bs.replace(';','')
+
+    return( float(Bs) )
 
 def fetch_jmax_dir(dir):
     import glob
@@ -542,19 +587,6 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
 
     return err
 
-#    print("%e" % (err) )
-#
-#    plt.figure()
-#    plt.pcolormesh(data_ref)
-#
-#    plt.figure()
-#    plt.pcolormesh(data_dense)
-#
-#    plt.figure()
-#    plt.pcolormesh(data_dense-data_ref)
-
-#    print(box_dense)
-#    print(box_ref)
 
 #%%
 def to_dense_grid( fname_in, fname_out):
