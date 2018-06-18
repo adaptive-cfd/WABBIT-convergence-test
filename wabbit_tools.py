@@ -650,8 +650,8 @@ def dense_matrix(  x0, dx, data, treecode ):
 
     for i in range(N):
         # get starting index of block
-        ix0 = int(x0[i,0]/dx[i,0])
-        iy0 = int(x0[i,1]/dx[i,1])
+        ix0 = int( round(x0[i,0]/dx[i,0]) )
+        iy0 = int( round(x0[i,1]/dx[i,1]) )
 
         # copy block content to data field. Note we skip the last points, which
         # are the redundant nodes.
