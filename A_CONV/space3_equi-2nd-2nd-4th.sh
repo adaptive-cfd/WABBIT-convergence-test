@@ -20,7 +20,7 @@ do
 	../replace_ini_value.sh $ini Time time_max 1.0
 	../replace_ini_value.sh $ini Time dt_fixed 0.0
 	../replace_ini_value.sh $ini Time dt_max 2.0e-3
-	../replace_ini_value.sh $ini Time CFL 1.2
+	../replace_ini_value.sh $ini Time CFL 1.0
 
 	# order
 	../replace_ini_value.sh $ini Discretization order_discretization FD_4th_central_optimized
@@ -32,7 +32,6 @@ do
 	../replace_ini_value.sh $ini Blocks inicond_refinements 0
 	../replace_ini_value.sh $ini Blocks number_block_nodes 17
 	../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
-	../replace_ini_value.sh $ini Blocks eps 1.0e-4
 	../replace_ini_value.sh $ini Blocks max_treelevel $ddx
 	../replace_ini_value.sh $ini Blocks min_treelevel $ddx
 

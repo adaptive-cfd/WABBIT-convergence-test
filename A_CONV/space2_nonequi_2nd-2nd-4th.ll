@@ -2,7 +2,7 @@
 # submit with: llsubmit timing.ll
 # number of nodes:
 
-# @ job_name = WABBIT-swirl-equidistant
+# @ job_name = WABBIT-convection-dx2
 # Type de travail
 # @ job_type = mpich
 # Nombre de processus MPI demandes
@@ -18,10 +18,8 @@ set -x
 
 export mpi="mpirun -np $NB_TASKS "
 
-cd C_HALFSWIRL
-
 if [ ! -f wabbit ]; then
     ln -s ../wabbit
 fi
 
-./equidistant.sh
+./space2_nonequi_2nd-2nd-4th.sh
