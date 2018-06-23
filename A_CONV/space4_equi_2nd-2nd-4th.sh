@@ -14,7 +14,7 @@ do
 	mkdir $dir
 	cd $dir
 	cp ../$ini .
-	ln -s ../../../wabbit
+	ln -s ../wabbit
 
 	# time
 	../replace_ini_value.sh $ini Time time_max 1.0

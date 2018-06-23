@@ -31,7 +31,7 @@ if [ "$test1" == "1" ]; then
 		cd $dir
 		cp ../$ini .
 
-		ln -s ../../../wabbit
+		ln -s ../wabbit
 
 		../replace_ini_value.sh $ini Saving N_fields_saved 1
 		../replace_ini_value.sh $ini Saving field_names phi
@@ -83,7 +83,7 @@ if [ "$test2" == "1" ]; then
 		cd $dir
 		cp ../$ini .
 
-		ln -s ../../../wabbit
+		ln -s ../wabbit
 
 		../replace_ini_value.sh $ini Saving N_fields_saved 1
 		../replace_ini_value.sh $ini Saving field_names phi
