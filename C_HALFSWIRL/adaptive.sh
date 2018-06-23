@@ -3,7 +3,7 @@
 ini="halfswirl.ini"
 bs=33
 
-JMAX=( 3 4 5 6 7 )
+JMAX=( 3 4 5 6 7 13 )
 EPS=( 	1.00000000e-07
 1.00000000e-02   6.15848211e-03   3.79269019e-03
 2.33572147e-03   1.43844989e-03   8.85866790e-04
@@ -14,7 +14,7 @@ EPS=( 	1.00000000e-07
 1.62377674e-06   1.00000000e-06)
 
 # as Jmax=4 and eps=1e-6 makes no sense, you can skip it. just the smallest 1e-7 value is contained!
-EPS_max=( 20 20 20 20 20 )
+EPS_max=( 20 20 20 20 20 20 )
 
 pre="adaptive"
 
