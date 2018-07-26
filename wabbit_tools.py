@@ -307,7 +307,7 @@ def treecode_level( tc ):
             if (tc[j]==-1):
                 break
 
-    level = j - 1 + 1 # note one-based level indexing.
+    level = j + 1 # note one-based level indexing.
     return(level)
 
 
@@ -353,6 +353,8 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
 
     # read data
     time, x0, dx, box, data, treecode = read_wabbit_hdf5( file )
+    # for 3 vortices contour plot
+    #data=data+3.7995443865875507E-002
     # get number of blocks and blocksize
     N, Bs = data.shape[0], data.shape[1]
 
@@ -383,9 +385,11 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
                 hplot = ax.pcolormesh( Y, X, block, cmap=cmap, shading='flat' )
             else:
                 hplot = ax.contour( Y, X, block, [0.1, 0.2, 0.5, 0.75] )
-
+		# 3 vortices contour plot
+#                hplot = ax.contour(Y, X, block, np.linspace(np.pi/100.0, np.pi, 10), colors='k' )
+#                hplot = ax.contour(Y, X, block, np.linspace(-np.pi, -np.pi/100.0, 10), colors='k' )
             # use rasterization for the patch we just draw
-            hplot.set_rasterized(True)
+            #hplot.set_rasterized(True)
 
             # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
             # that they all use the same.
@@ -457,7 +461,7 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
             plt.savefig( file.replace('.h5','-grid.pdf') )
 
 #%%
-def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
+def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2, dim=2):
     """ Compute the error (in some norm) wrt a flusi field.
     Useful for example for the half-swirl test where no exact solution is available
     at mid-time (the time of maximum distortion)
@@ -471,7 +475,7 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
     import matplotlib.pyplot as plt
 
     # read in flusi's reference solution
-    time_ref, box_ref, origin_ref, data_ref = insect_tools.read_flusi_HDF5( fname_flusi )
+    time_ref, box_ref, data_ref = insect_tools.read_flusi_HDF5( fname_flusi )
     ny = data_ref.shape[1]
 
     # wabbit field to be analyzed: note has to be full already
@@ -480,13 +484,13 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
     Jflusi = (np.log2(ny/(Bs-1)))
     print("Flusi resolution: %i %i %i so desired level is Jmax=%f" % (data_ref.shape[0], data_ref.shape[2], data_ref.shape[2], Jflusi) )
 
-    # squeeze 3D flusi field (where dim0 == 1) to true 2d data
-    data_ref = data_ref[0,:,:].copy()
-    origin_ref = origin_ref[1:2].copy()
-    box_ref = box_ref[1:2].copy()
+    if dim==2:
+        # squeeze 3D flusi field (where dim0 == 1) to true 2d data
+        data_ref = data_ref[:,:,0].copy()
+        box_ref = box_ref[1:2].copy()
 
     # convert wabbit to dense field
-    data_dense, box_dense = dense_matrix( x0, dx, data, treecode )
+    data_dense, box_dense = dense_matrix( x0, dx, data, treecode, dim )
 
     if data_dense.shape[0] < data_ref.shape[0]:
         # both datasets have different size
@@ -494,28 +498,30 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
         data_ref = data_ref[::s, ::s].copy()
 
     # we need to transpose the flusi data...
-    data_ref = data_ref.transpose()
+    #data_ref = data_ref.transpose()
 
     err = np.ndarray.flatten(data_dense-data_ref)
     exc = np.ndarray.flatten(data_ref)
 
     err = np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm)
 
-    return err
-
 #    print("%e" % (err) )
 #
 #    plt.figure()
 #    plt.pcolormesh(data_ref)
+#    plt.savefig('data_ref.png')
 #
 #    plt.figure()
 #    plt.pcolormesh(data_dense)
+#    plt.savefig('data_dense.png')
 #
-#    plt.figure()
-#    plt.pcolormesh(data_dense-data_ref)
+ #   plt.figure()
+ #   plt.pcolormesh(data_dense-data_ref)
+#    plt.savefig('difference.png')
 
 #    print(box_dense)
 #    print(box_ref)
+    return err
 
 #%%
 def to_dense_grid( fname_in, fname_out):
@@ -543,8 +549,9 @@ def to_dense_grid( fname_in, fname_out):
     insect_tools.write_flusi_HDF5( fname_out, time, box, field)
 
 #%%
-def dense_matrix(  x0, dx, data, treecode ):
+def dense_matrix(  x0, dx, data, treecode, dim=2 ):
     import numpy as np
+    import math
     """ Convert a WABBIT grid to a full dense grid in a single matrix.
 
     We asssume here that interpolation has already been performed, i.e. all
@@ -564,29 +571,43 @@ def dense_matrix(  x0, dx, data, treecode ):
         print("ERROR! not an equidistant grid yet...")
 
     # note skipping of redundant points, hence the -1
-    ny = int( np.sqrt(N)*(Bs-1) )
-    nx = int( np.sqrt(N)*(Bs-1) )
+    if dim==2:
+        nx = int( np.sqrt(N)*(Bs-1) )
+    else:
+        nx = int( math.pow(N,1.0/dim)*(Bs-1)) +1
+    
     # all spacings should be the same - it does not matter which one we use.
     ddx = dx[0,0]
 
     print("Number of blocks %i" % (N))
-    print("Dense field resolution %i x %i" % (nx, ny) )
     print("Spacing %e domain %e" % (ddx, ddx*nx))
-
-    # allocate target field
-    field = np.zeros([nx,ny])
+    if dim==2:
+        # allocate target field
+        field = np.zeros([nx,nx])
+        print("Dense field resolution %i x %i" % (nx, nx) )
+        # domain size
+        box = [dx[0,0]*nx, dx[0,1]*nx]
+    else:
+        # allocate target field
+        field = np.zeros([nx,nx,nx])
+        print("Dense field resolution %i x %i x %i" % (nx, nx, nx) )
+        # domain size
+        box = [dx[0,0]*nx, dx[0,1]*nx, dx[0,2]*nx]
 
     for i in range(N):
         # get starting index of block
-        ix0 = int(x0[i,0]/dx[i,0])
-        iy0 = int(x0[i,1]/dx[i,1])
+        ix0 = int(round(x0[i,0]/dx[i,0]))
+        iy0 = int(round(x0[i,1]/dx[i,1]))
+        if dim==3:
+            iz0 = int(round(x0[i,2]/dx[i,2]))
+            # copy block content to data field. Note we skip the last points, which
+            # are the redundant nodes.
+            field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1, iz0:iz0+Bs-1 ] = data[i,0:-1,0:-1, 0:-1]
+        else:
+            # copy block content to data field. Note we skip the last points, which
+            # are the redundant nodes.
+            field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
 
-        # copy block content to data field. Note we skip the last points, which
-        # are the redundant nodes.
-        field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
-
-    # domain size
-    box = [dx[0,0]*nx, dx[0,1]*ny]
 
     return(field, box)
 
