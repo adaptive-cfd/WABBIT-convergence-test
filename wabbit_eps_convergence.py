@@ -37,37 +37,40 @@ def do_test(rootdir, name):
 
 
 #%% convection
-plt.close('all')
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = 'serif'
-plt.rcParams["font.serif"] = 'Times'
-
-do_test("A_CONV/adapt1","adaptive 4th-4th-4th")
-do_test("A_CONV/adapt2","adaptive 2nd-2nd-4th")
-
-
-plt.figure(1)
-plt.title('Convection test')
-plt.grid()
-plt.xlabel('$\\varepsilon$')
-plt.ylabel('$||\phi-\phi_{\\mathrm{ex}}||_2/||\phi_{\\mathrm{ex}}||_2$')
-plt.legend()#loc='upper left', bbox_to_anchor=(0,1.02,1,0.2), prop={'size': 6})
-plt.gcf().subplots_adjust(top=0.82)
-plt.gcf().savefig('conv-adaptive-eps.pdf')
-
-plt.figure(2)
-plt.title('Convection test')
-plt.grid()
-plt.xlabel('$\\varepsilon$')
-plt.ylabel('$\max\\left({N_{b}(t)}\\right)$')
-plt.legend()#loc='upper left', bbox_to_anchor=(0,1.02,1,0.2), prop={'size': 6})
-plt.gcf().subplots_adjust(top=0.82)
-plt.gcf().savefig('conv-adaptive-nblocks.pdf')
+#plt.close('all')
+#plt.rcParams["text.usetex"] = True
+#plt.rcParams["font.family"] = 'serif'
+#plt.rcParams["font.serif"] = 'Times'
+#
+#do_test("A_CONV/adapt1","adaptive 4th-4th-4th")
+#do_test("A_CONV/adapt2","adaptive 2nd-2nd-4th")
+#
+#
+#plt.figure(1)
+#plt.title('Convection test')
+#plt.grid()
+#plt.xlabel('$\\varepsilon$')
+#plt.ylabel('$||\phi-\phi_{\\mathrm{ex}}||_2/||\phi_{\\mathrm{ex}}||_2$')
+#plt.legend()#loc='upper left', bbox_to_anchor=(0,1.02,1,0.2), prop={'size': 6})
+#plt.gcf().subplots_adjust(top=0.82)
+#plt.gcf().savefig('conv-adaptive-eps.pdf')
+#
+#plt.figure(2)
+#plt.title('Convection test')
+#plt.grid()
+#plt.xlabel('$\\varepsilon$')
+#plt.ylabel('$\max\\left({N_{b}(t)}\\right)$')
+#plt.legend()#loc='upper left', bbox_to_anchor=(0,1.02,1,0.2), prop={'size': 6})
+#plt.gcf().subplots_adjust(top=0.82)
+#plt.gcf().savefig('conv-adaptive-nblocks.pdf')
 
 
 #%% swirl
 plt.close('all')
 
+plt.rcParams["text.usetex"] = True
+plt.rcParams["font.family"] = 'serif'
+plt.rcParams["font.serif"] = 'Times'
 
 do_test("B_SWIRL/adaptive1_swirl-tough","SWIRL-tough-4th-4th-4th (T=10.0, CFL=1.0)")
 
