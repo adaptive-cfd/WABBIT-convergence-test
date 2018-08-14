@@ -328,7 +328,7 @@ def fetch_compression_rate_dir(dir):
     d2 = np.loadtxt(dir+'blocks_per_mpirank_rhs.t')
 
     # how many blocks was the RHS evaluated on, on all mpiranks?
-    nblocks_rhs = np.sum( d2[:,2:], axis=1 )
+    nblocks_rhs = d2[:,2]
 
     # what was the maximum number in time?
     it = np.argmax( nblocks_rhs )
@@ -402,7 +402,9 @@ def get_max_min_level( treecode ):
 
 
 def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=None, caxis_symmetric=False, title=True, mark_blocks=True,
-                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300, block_edge_color='k', shading='flat' ):
+                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300, block_edge_color='k', shading='flat',
+                     gridonly_coloring='mpirank', flipud=False ):
+
     """ Read a (2D) wabbit file and plot it as a pseudocolor plot.
 
     Keyword arguments:
@@ -418,8 +420,17 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
     # read procs table, if we want to draw the grid only
     if gridonly:
         fid = h5py.File(file,'r')
+
+        # read procs array from file
         b = fid['procs'][:]
         procs = np.array(b, dtype=float)
+
+        b = fid['refinement_status'][:]
+        ref_status = np.array(b, dtype=float)
+
+        b = fid['lgt_ids'][:]
+        lgt_ids = np.array(b, dtype=float)
+
         fid.close()
 
     # read data
@@ -447,58 +458,85 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
     jmin, jmax = get_max_min_level( treecode )
 
     for i in range(N):
-#        if not gridonly:
-        [X, Y] = np.meshgrid( np.arange(Bs)*dx[i,0]+x0[i,0], np.arange(Bs)*dx[i,1]+x0[i,1])
-        block = data[i,:,:].copy().transpose()
-        if not contour:
-            hplot = ax.pcolormesh( Y, X, block, cmap=cmap, shading=shading )
-        else:
-            hplot = ax.contour( Y, X, block, [0.1, 0.2, 0.5, 0.75] )
-
-        # use rasterization for the patch we just draw
-        hplot.set_rasterized(True)
-
-        # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
-        # that they all use the same.
-        h.append(hplot)
-        a = hplot.get_clim()
-        c1.append(a[0])
-        c2.append(a[1])
-
-        if mark_blocks and not gridonly:
-            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor=block_edge_color ))
-
-        if gridonly:
-#            level = treecode_level( treecode[i,:] )
-#            color = 0.9 - 0.75*(level-jmin)/(jmax-jmin)
-
-            colormap_function = plt.get_cmap('Paired')
-            color = colormap_function( procs[i]/np.max(procs) )
-
-#            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=[color,color,color], edgecolor='k' ))
-            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=color, edgecolor=block_edge_color ))
-
-
-    if not gridonly:
-        # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
-        # that they all use the same.
-        if caxis is None:
-            if not caxis_symmetric:
-                # automatic colorbar, using min and max throughout all patches
-                for hplots in h:
-                    hplots.set_clim( (min(c1),max(c2))  )
+        if not gridonly_coloring is 'level':
+            if not flipud :
+                [X, Y] = np.meshgrid( np.arange(Bs)*dx[i,0]+x0[i,0], np.arange(Bs)*dx[i,1]+x0[i,1])
             else:
-                # automatic colorbar, but symmetric, using the SMALLER of both absolute values
-                c= min( [abs(min(c1)), max(c2)] )
-                for hplots in h:
-                    hplots.set_clim( (-c,c)  )
-        else:
-            # set fixed (user defined) colorbar for all patches
-            for hplots in h:
-                hplots.set_clim( (min(caxis),max(caxis))  )
+                [X, Y] = np.meshgrid( box[0]-np.arange(Bs)*dx[i,0]+x0[i,0], np.arange(Bs)*dx[i,1]+x0[i,1])
 
-        if colorbar:
-            plt.colorbar(h[0], ax=ax)
+            block = data[i,:,:].copy().transpose()
+
+            if not contour:
+                if gridonly:
+                    # draw some other qtys (mpirank, lgt_id or refinement-status)
+                    if gridonly_coloring in ['mpirank', 'cpu']:
+                        block[:,:] = np.round( procs[i] )
+
+                    elif gridonly_coloring in ['refinement-status', 'refinement_status']:
+                        block[:,:] = ref_status[i]
+
+                    elif gridonly_coloring is 'lgt_id':
+                        block[:,:] = lgt_ids[i]
+                        tag = "%i" % (lgt_ids[i])
+                        x = Bs/2*dx[i,1]+x0[i,1]
+                        if not flipud:
+                            y = Bs/2*dx[i,0]+x0[i,0]
+                        else:
+                            y = box[0] - Bs/2*dx[i,0]+x0[i,0]
+                        plt.text( x, y, tag, fontsize=6, horizontalalignment='center',
+                                 verticalalignment='center')
+
+                    else:
+                        raise ValueError("ERROR! The value for gridonly_coloring is unkown")
+
+                # actual plotting of patch
+                hplot = ax.pcolormesh( Y, X, block, cmap=cmap, shading=shading )
+
+            else:
+                # contour plot only with actual data
+                hplot = ax.contour( Y, X, block, [0.1, 0.2, 0.5, 0.75] )
+
+            # use rasterization for the patch we just draw
+            hplot.set_rasterized(True)
+
+            # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
+            # that they all use the same.
+            h.append(hplot)
+            a = hplot.get_clim()
+            c1.append(a[0])
+            c2.append(a[1])
+
+            if mark_blocks and not gridonly:
+                # empty rectangle
+                ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor=block_edge_color ))
+
+            # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
+            # that they all use the same.
+            if caxis is None:
+                if not caxis_symmetric:
+                    # automatic colorbar, using min and max throughout all patches
+                    for hplots in h:
+                        hplots.set_clim( (min(c1),max(c2))  )
+                else:
+                    # automatic colorbar, but symmetric, using the SMALLER of both absolute values
+                    c= min( [abs(min(c1)), max(c2)] )
+                    for hplots in h:
+                        hplots.set_clim( (-c,c)  )
+            else:
+                # set fixed (user defined) colorbar for all patches
+                for hplots in h:
+                    hplots.set_clim( (min(caxis),max(caxis))  )
+        else:
+            # if we color the blocks simply with grayscale depending on their level
+            # well then just draw rectangles. note: you CAN do that with mpirank etc, but
+            # then you do not have a colorbar.
+            level = treecode_level( treecode[i,:] )
+            color = 0.9 - 0.75*(level-jmin)/(jmax-jmin)
+            ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], facecolor=[color,color,color], edgecolor=block_edge_color ))
+
+
+    if colorbar:
+        plt.colorbar(h[0], ax=ax)
 
     if title:
         plt.title( "t=%f Nb=%i Bs=%i" % (time,N,Bs) )
@@ -662,7 +700,5 @@ def dense_matrix(  x0, dx, data, treecode ):
 
     return(field, box)
 
-#import matplotlib.pyplot as plt
-#time, x0, dx, box, data, treecode = read_wabbit_hdf5('/home/engels/dev/WABBIT4-new-physics/phil/Ux_000000000000.h5')
-#field, box = dense_matrix(  x0, dx, data, treecode )
-#plt.plot(field[:,0], 'o')
+
+#plot_wabbit_file('/home/engels/dev/WABBIT4-new-physics/phi_000000000000.h5', gridonly=True, gridonly_coloring='lgt_id', cmap='jet', flipud=False)
