@@ -575,7 +575,7 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
             plt.savefig( file.replace('.h5','-grid.pdf') )
 
 #%%
-def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
+def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2, dim=2):
     """ Compute the error (in some norm) wrt a flusi field.
     Useful for example for the half-swirl test where no exact solution is available
     at mid-time (the time of maximum distortion)
@@ -598,13 +598,13 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2):
     Jflusi = (np.log2(ny/(Bs-1)))
     print("Flusi resolution: %i %i %i so desired level is Jmax=%f" % (data_ref.shape[0], data_ref.shape[2], data_ref.shape[2], Jflusi) )
 
-    # squeeze 3D flusi field (where dim0 == 1) to true 2d data
-    data_ref = data_ref[0,:,:].copy()
-    origin_ref = origin_ref[1:2].copy()
-    box_ref = box_ref[1:2].copy()
+    if dim==2:
+        # squeeze 3D flusi field (where dim0 == 1) to true 2d data
+        data_ref = data_ref[:,:,0].copy()
+        box_ref = box_ref[1:2].copy()
 
     # convert wabbit to dense field
-    data_dense, box_dense = dense_matrix( x0, dx, data, treecode )
+    data_dense, box_dense = dense_matrix( x0, dx, data, treecode, dim )
 
     if data_dense.shape[0] < data_ref.shape[0]:
         # both datasets have different size
@@ -652,8 +652,9 @@ def to_dense_grid( fname_in, fname_out):
     insect_tools.write_flusi_HDF5( fname_out, time, box, field)
 
 #%%
-def dense_matrix(  x0, dx, data, treecode ):
+def dense_matrix(  x0, dx, data, treecode, dim=2 ):
     import numpy as np
+    import math
     """ Convert a WABBIT grid to a full dense grid in a single matrix.
 
     We asssume here that interpolation has already been performed, i.e. all
@@ -674,31 +675,42 @@ def dense_matrix(  x0, dx, data, treecode ):
         raise ValueError("ERROR! not an equidistant grid yet...")
 
     # note skipping of redundant points, hence the -1
-    ny = int( np.sqrt(N)*(Bs-1) )
-    nx = int( np.sqrt(N)*(Bs-1) )
+    if dim==2:
+        nx = int( np.sqrt(N)*(Bs-1) )
+    else:
+        nx = int( math.pow(N,1.0/dim)*(Bs-1)) +1
+    
     # all spacings should be the same - it does not matter which one we use.
     ddx = dx[0,0]
 
     print("Number of blocks %i" % (N))
-    print("Dense field resolution %i x %i" % (nx, ny) )
     print("Spacing %e domain %e" % (ddx, ddx*nx))
 
-    # allocate target field
-    field = np.zeros([nx,ny])
+    if dim==2:
+        # allocate target field
+        field = np.zeros([nx,nx])
+        print("Dense field resolution %i x %i" % (nx, nx) )
+        # domain size
+        box = [dx[0,0]*nx, dx[0,1]*nx]
+    else:
+        # allocate target field
+        field = np.zeros([nx,nx,nx])
+        print("Dense field resolution %i x %i x %i" % (nx, nx, nx) )
+        # domain size
+        box = [dx[0,0]*nx, dx[0,1]*nx, dx[0,2]*nx]
 
     for i in range(N):
         # get starting index of block
-        ix0 = int( round(x0[i,0]/dx[i,0]) )
-        iy0 = int( round(x0[i,1]/dx[i,1]) )
-
-        # copy block content to data field. Note we skip the last points, which
-        # are the redundant nodes.
-        field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
-
-    # domain size
-    box = [dx[0,0]*nx, dx[0,1]*ny]
+        ix0 = int(round(x0[i,0]/dx[i,0]))
+        iy0 = int(round(x0[i,1]/dx[i,1]))
+        if dim==3:
+            iz0 = int(round(x0[i,2]/dx[i,2]))
+            # copy block content to data field. Note we skip the last points, which
+            # are the redundant nodes.
+            field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1, iz0:iz0+Bs-1 ] = data[i,0:-1,0:-1, 0:-1]
+        else:
+            # copy block content to data field. Note we skip the last points, which
+            # are the redundant nodes.
+            field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
 
     return(field, box)
-
-
-#plot_wabbit_file('/home/engels/dev/WABBIT4-new-physics/phi_000000000000.h5', gridonly=True, gridonly_coloring='lgt_id', cmap='jet', flipud=False)
