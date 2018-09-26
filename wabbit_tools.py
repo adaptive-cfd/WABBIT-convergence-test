@@ -50,6 +50,49 @@ def read_wabbit_hdf5(file):
 
     return time, x0, dx, box, data, treecode
 
+# %% 
+
+def read_wabbit_hdf5_dir(dir):
+    """ Read all h5 files in directory dir.
+
+    Return time, x0, dx, box, data, treecode.
+    
+    Use data["phi"][it] to referenz quantity phi at iteration it
+    """
+    import numpy as np
+    import re
+    import ntpath
+    import os
+    
+    it=0
+    data={'time': [],'x0':[],'dx':[],'treecode':[]}
+    # we loop over all files in the given directory
+    for file in os.listdir(dir):
+        # filter out the good ones (ending with .h5)
+        if file.endswith(".h5"): 
+            # from the file we can get the fieldname
+            fieldname=re.split('_',file)[0]
+            print(fieldname)
+            time, x0, dx, box, field, treecode = read_wabbit_hdf5(os.path.join(dir, file))
+            #increase the counter             
+            data['time'].append(time[0])
+            data['x0'].append(x0)
+            data['dx'].append(dx)
+            data['treecode'].append(treecode)
+            if fieldname not in data:
+                # add the new field to the dictionary
+                data[fieldname]=[]
+                data[fieldname].append(field)
+            else: # append the field to the existing data field
+                data[fieldname].append(field)
+            it=it+1
+    # the size of the domain
+    data['box']=box
+    #return time, x0, dx, box, data, treecode
+    return data
+
+
+#%%
 
 def wabbit_error(dir, show=False, norm=2, file=None):
     import numpy as np
@@ -685,7 +728,7 @@ def dense_matrix(  x0, dx, data, treecode, dim=2 ):
 
     print("Number of blocks %i" % (N))
     print("Spacing %e domain %e" % (ddx, ddx*nx))
-
+    
     if dim==2:
         # allocate target field
         field = np.zeros([nx,nx])
@@ -694,7 +737,7 @@ def dense_matrix(  x0, dx, data, treecode, dim=2 ):
         box = [dx[0,0]*nx, dx[0,1]*nx]
     else:
         # allocate target field
-        field = np.zeros([nx,nx,nx])
+        field = np.zeros([nx,nx,nx])        
         print("Dense field resolution %i x %i x %i" % (nx, nx, nx) )
         # domain size
         box = [dx[0,0]*nx, dx[0,1]*nx, dx[0,2]*nx]
