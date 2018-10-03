@@ -8,6 +8,17 @@ import configparser
 import datetime
 import os
 
+class bcolors:
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+
+
 print("----------------------------------------")
 print(" Remaining walltime estimator for wabbit")
 print("----------------------------------------")
@@ -44,4 +55,6 @@ nt_left = (T-d[-1,0]) / dt
 # this is what we have to wait still
 time_left = nt_left * tcpu_avg
 
-print("Time to reach: T=%e. Now: we did nt=%i to reach T=%e and the remaing time is: %s" % (T, nt_now, d[-1,0], str(datetime.timedelta(seconds=time_left))) )
+print("Time to reach: T=%e. Now: we did nt=%i to reach T=%e and the remaing time is: %s%s%s"
+      % (T, nt_now, d[-1,0], bcolors.OKGREEN, str(datetime.timedelta(seconds=time_left)), bcolors.ENDC ) )
+
