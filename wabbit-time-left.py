@@ -53,7 +53,7 @@ dt = d[-1,0] / nt_now
 nt_left = (T-d[-1,0]) / dt
 
 # this is what we have to wait still
-time_left = nt_left * tcpu_avg
+time_left = round(nt_left * tcpu_avg)
 
 print("Time to reach: T=%e. Now: we did nt=%i to reach T=%e and the remaing time is: %s%s%s"
       % (T, nt_now, d[-1,0], bcolors.OKGREEN, str(datetime.timedelta(seconds=time_left)), bcolors.ENDC ) )

@@ -6,7 +6,7 @@ import insect_tools
 import glob
 import configparser
 import datetime
-import os
+import sys
 
 class bcolors:
         HEADER = '\033[95m'
@@ -18,13 +18,8 @@ class bcolors:
         BOLD = '\033[1m'
         UNDERLINE = '\033[4m'
 
+# fetch jobfile from call
+inifile = sys.argv[1]
 
-# look for the ini file, this gives us the information at what time the run is done
-inifile = glob.glob('*.ini')
-
-if (len(inifile) > 1):
-    raise ValueError('ERROR MORE THAN ONE INI FILE in this directory.')
-
-
-print("We found and check the INI file: "+inifile[0])
-wabbit_tools.check_parameters_for_stupid_errors( inifile[0] )
+print("We found and check the INI file: "+inifile)
+wabbit_tools.check_parameters_for_stupid_errors( inifile )
