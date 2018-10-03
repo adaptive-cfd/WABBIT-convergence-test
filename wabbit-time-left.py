@@ -30,6 +30,12 @@ else:
     dir = './'
 
 
+if dir[-1] == '/':
+    dir = dir
+else:
+    dir = dir + '/'
+
+
 if not os.path.isfile(dir + 'timesteps_info.t'):
     raise ValueError("The file timesteps_info.t has not been found here.")
 
