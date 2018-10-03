@@ -5,6 +5,91 @@ Created on Thu Dec 28 15:41:48 2017
 
 @author: engels
 """
+class bcolors:
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+
+def warn( msg ):
+    print( bcolors.FAIL + "WARNING! " + bcolors.ENDC + msg)
+
+
+#%%
+def check_parameters_for_stupid_errors( file ):
+    """ For a given WABBIT parameter file, check for the most common stupid errors
+    the user can commit: Jmax<Jmain, negative time steps, etc.
+    """
+    import os
+
+    print("We scan %s for stupid errors." % (file) )
+
+    # check if the file exists, at least
+    if not os.path.isfile(file):
+        raise ValueError("Stupidest error of all: we did not find the INI file.")
+
+
+    bs = get_ini_parameter( file, 'Blocks', 'number_block_nodes', int)
+    if bs % 2 == 0:
+        warn('The block size is bs=%i which is an EVEN number.' % (bs) )
+    if bs < 3:
+        warn('The block size is bs=%i is very small or even negative.' % (bs) )
+
+#%%
+def get_ini_parameter( inifile, section, keyword, dtype=float ):
+    """ From a given ini file, read [Section]::keyword and return the value
+        If the value is not found, an error is raised
+    """
+    import configparser
+    import os
+
+    # check if the file exists, at least
+    if not os.path.isfile(inifile):
+        raise ValueError("Stupidest error of all: we did not find the INI file.")
+
+    # initialize parser object
+    config = configparser.ConfigParser()
+    # read (parse) inifile.
+    config.read(inifile)
+
+    # use configparser to find the value
+    value_string = config.get( section, keyword, fallback='UNKNOWN')
+
+    # check if that worked
+    if value_string is 'UNKNOWN':
+        raise ValueError("NOT FOUND! file=%s section=%s keyword=%" % (inifile, section, keyword) )
+
+    # configparser returns "0.0;" so remove trailing ";"
+    value_string = value_string.replace(';', '')
+
+    return dtype(value_string)
+
+#%%
+def get_inifile_dir( dir ):
+    """ For a given simulation dir, return the *.INI file. Warning is issued if the
+        choice is not unique. In such cases, we should return the longest one. REASON:
+        For insects, we save the wingbeat kinematics in smaller INI files.
+    """
+    import glob
+
+    if dir[-1] == '/':
+        dir = dir
+    else:
+        dir = dir + '/'
+
+    inifile = glob.glob(dir+'*.ini')
+
+    if len(inifile) > 1:
+        # if more ethan one ini file is found, try looking for the most appropriate
+
+        print('Warning: we ')
+    else:
+        return inifile[0]
+
 
 #%%
 def block_level_distribution_file( file ):
@@ -247,56 +332,11 @@ def wabbit_error(dir, show=False, norm=2, file=None):
     return( np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm) )
 
 
-def key_parameters(dir):
-    import configparser
-    import glob
-
-    inifile = glob.glob(dir+'*.ini')
-
-    if (len(inifile) > 1):
-        print('ERROR MORE THAN ONE INI FILE')
-
-    print(inifile[0])
-    config = configparser.ConfigParser()
-    config.read(inifile[0])
-
-
-    adapt_mesh=config.get('Blocks','adapt_mesh',fallback='0')
-    adapt_inicond=config.get('Blocks','adapt_inicond',fallback='0')
-    eps= config.get('Blocks','eps',fallback='0')
-
-    namestring = adapt_mesh+adapt_inicond+eps
-
-    print(namestring)
-
-
 def fetch_dt_dir(dir):
-    import glob
 
-    if dir[-1] == '/':
-        dir = dir
-    else:
-        dir=dir+'/'
+    inifile = get_inifile_dir(dir)
+    dt = get_ini_parameter( inifile, 'Time', 'dt_fixed', dtype=float )
 
-    inifile = glob.glob(dir+'*.ini')
-
-    if len(inifile) > 1:
-        print('ERROR MORE THAN ONE INI FILE')
-
-    ## Open the file with read only permit
-    f = open(inifile[0], "r")
-    ## use readlines to read all lines in the file
-    ## The variable "lines" is a list containing all lines
-    lines = f.readlines()
-    ## close the file after reading the lines.
-    f.close()
-
-    dt = 0.0
-    for line in lines:
-        if line.find('dt_fixed=') != -1:
-            line = line.replace('dt_fixed=','')
-            line = line.replace(';','')
-            dt = float(line)
     return(dt)
 
 
