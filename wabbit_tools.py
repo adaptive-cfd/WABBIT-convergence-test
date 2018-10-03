@@ -39,6 +39,29 @@ def check_parameters_for_stupid_errors( file ):
     if bs < 3:
         warn('The block size is bs=%i is very small or even negative.' % (bs) )
 
+    # if somebody modifies the standard parameter file, users have to update their
+    # ini files they use. this is often forgoten and obnoxious. Hence, if we find
+    # value sthat no longer exist, warn the user.
+    if exists_ini_parameter( file, "Blocks", "number_data_fields" ) :
+        warn('Found deprecated parameter: [Blocks]::number_data_fields')
+
+    if exists_ini_parameter( file, "Physics", "initial_cond" ) :
+        warn('Found deprecated parameter: [Physics]::initial_cond')
+
+    if exists_ini_parameter( file, "Physics", "initial_cond" ) :
+        warn('Found deprecated parameter: [Physics]::initial_cond')
+
+    if exists_ini_parameter( file, "Dimensionality", "dim" ) :
+        warn('Found deprecated parameter: [Dimensionality]::dim')
+
+    if exists_ini_parameter( file, "DomainSize", "Lx" ) :
+        warn('Found deprecated parameter: [DomainSize]::Lx')
+
+    if exists_ini_parameter( file, "Time", "time_step_calc" ) :
+        warn('Found deprecated parameter: [Time]::time_step_calc')
+
+
+
 #%%
 def get_ini_parameter( inifile, section, keyword, dtype=float ):
     """ From a given ini file, read [Section]::keyword and return the value
@@ -68,6 +91,32 @@ def get_ini_parameter( inifile, section, keyword, dtype=float ):
 
     return dtype(value_string)
 
+#%%
+def exists_ini_parameter( inifile, section, keyword ):
+    """ check if a given parameter in the ini file exists or not. can be used to detect
+        deprecated entries somebody removed
+    """
+    found_section = False
+    found_parameter = False
+
+    # read jobfile
+    with open(inifile) as f:
+        # loop over all lines
+        for line in f:
+
+            # once found, do not run to next section
+            if found_section and line[0] == "[":
+                found_section = False
+
+            # until we find the section
+            if "["+section+"]" in line:
+                found_section = True
+
+            # only if were in the right section the keyword counts
+            if found_section and keyword+"=" in line:
+                found_parameter = True
+
+    return found_parameter
 #%%
 def get_inifile_dir( dir ):
     """ For a given simulation dir, return the *.INI file. Warning is issued if the
