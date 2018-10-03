@@ -5,6 +5,39 @@ Created on Thu Dec 28 15:41:48 2017
 
 @author: engels
 """
+
+#%%
+def block_level_distribution_file( file ):
+    """ Read a 2D/3D wabbit file and return a list of how many blocks are at the different levels
+    """
+    import h5py
+    import numpy as np
+
+    # open the h5 wabbit file
+    fid = h5py.File(file,'r')
+
+    # read treecode table
+    b = fid['block_treecode'][:]
+    treecode = np.array(b, dtype=float)
+
+    # close file
+    fid.close()
+
+    # number of blocks
+    Nb = treecode.shape[0]
+
+    # min/max level. required to allocate list!
+    jmin, jmax = get_max_min_level( treecode )
+    counter = np.zeros(jmax+1)
+
+    # fetch level for each block and count
+    for i in range(Nb):
+        J = treecode_level(treecode[i,:])
+        counter[J] += 1
+
+    return counter
+
+#%%
 def read_wabbit_hdf5(file):
     """ Read a wabbit-type HDF5 of block-structured data.
 
@@ -50,31 +83,63 @@ def read_wabbit_hdf5(file):
 
     return time, x0, dx, box, data, treecode
 
-# %% 
+#%%
+def write_wabbit_hdf5( file, time, x0, dx, box, data, treecode ):
+    """ Write data from wabbit to an HDF5 file """
+    import h5py
+    import numpy as np
 
+    if len(data.shape)==3:
+        # 3d data
+        nx, ny, nz = data.shape
+        print( "Writing to file=%s max=%e min=%e size=%i %i %i " % (file, np.max(data), np.min(data), nx,ny,nz) )
+
+    else:
+        # 2d data
+        nx, ny = data.shape
+        print( "Writing to file=%s max=%e min=%e size=%i %i" % (file, np.max(data), np.min(data), nx,ny) )
+
+
+    fid = h5py.File( file, 'w')
+
+    fid.create_dataset( 'coords_origin', data=x0, dtype=np.float32 )
+    fid.create_dataset( 'coords_spacing', data=dx, dtype=np.float32 )
+    fid.create_dataset( 'blocks', data=data, dtype=np.float32 )
+    fid.create_dataset( 'block_treecode', data=treecode, dtype=np.float32 )
+
+    fid.close()
+
+    fid = h5py.File(file,'a')
+    dset_id = fid.get( 'blocks' )
+    dset_id.attrs.create('time', time)
+    dset_id.attrs.create('iteration', -99)
+    dset_id.attrs.create('domain-size', box )
+    fid.close()
+
+#%%
 def read_wabbit_hdf5_dir(dir):
     """ Read all h5 files in directory dir.
 
     Return time, x0, dx, box, data, treecode.
-    
-    Use data["phi"][it] to referenz quantity phi at iteration it
+
+    Use data["phi"][it] to reference quantity phi at iteration it
     """
     import numpy as np
     import re
     import ntpath
     import os
-    
+
     it=0
     data={'time': [],'x0':[],'dx':[],'treecode':[]}
     # we loop over all files in the given directory
     for file in os.listdir(dir):
         # filter out the good ones (ending with .h5)
-        if file.endswith(".h5"): 
+        if file.endswith(".h5"):
             # from the file we can get the fieldname
             fieldname=re.split('_',file)[0]
             print(fieldname)
             time, x0, dx, box, field, treecode = read_wabbit_hdf5(os.path.join(dir, file))
-            #increase the counter             
+            #increase the counter
             data['time'].append(time[0])
             data['x0'].append(x0)
             data['dx'].append(dx)
@@ -92,9 +157,13 @@ def read_wabbit_hdf5_dir(dir):
     return data
 
 
-#%%
 
+#%%
 def wabbit_error(dir, show=False, norm=2, file=None):
+    """ This function is in fact an artefact from earlier times, where we only simulated
+    convection/diffusion with WABBIT. Here, the ERROR is computed with respect to an
+    exact field (a Gaussian blob) which is set on the grid.
+    """
     import numpy as np
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
@@ -270,17 +339,30 @@ def fetch_Nblocks_RHS_dir(dir, return_Bs=False):
     else:
         dir = dir+'/'
 
+    # does the file exist?
     if os.path.isfile(dir+'blocks_per_mpirank_rhs.t'):
-        d = np.loadtxt(dir+'blocks_per_mpirank_rhs.t')
-        if d.shape[1] == 10:
-            # old format requires computing the number...
-            d[:,2] = np.sum( d[:,2:], axis=1 )
-            N = np.max(d[:,2])
-        else:
-            # new format saves Number of blocks
-            N = np.max(d[:,2])
+
+        # sometimes, glorious fortran writes ******* eg for iteration counter
+        # in which case the loadtxt will fail.
+        try:
+            # read file
+            d = np.loadtxt(dir+'blocks_per_mpirank_rhs.t')
+
+            # unfortunately, we changed the format of this file at some point:
+            if d.shape[1] == 10:
+                # old format requires computing the number...
+                d[:,2] = np.sum( d[:,2:], axis=1 )
+                N = np.max(d[:,2])
+            else:
+                # new format saves Number of blocks
+                N = np.max(d[:,2])
+        except:
+            print("Sometimes, glorious fortran writes ******* eg for iteration counter")
+            print("in which case the loadtxt will fail. I think that happended.")
+            N = 0
+
     else:
-        raise ValueError('blocks_per_mpirank_rhs.t not found in dir.'+dir)
+        raise ValueError('blocks_per_mpirank_rhs.t not found in dir: '+dir)
 
     if (return_Bs):
         # get blocksize
@@ -288,6 +370,7 @@ def fetch_Nblocks_RHS_dir(dir, return_Bs=False):
         return(N,Bs)
     else:
         return(N)
+
 
 def fetch_eps_dir(dir):
     import glob
@@ -312,6 +395,32 @@ def fetch_eps_dir(dir):
     eps = eps.replace(';','')
 
     return( float(eps) )
+
+
+def fetch_Ceta_dir(dir):
+    import glob
+    import configparser
+
+    if dir[-1] == '/':
+        dir = dir
+    else:
+        dir = dir+'/'
+
+    inifile = glob.glob(dir+'*.ini')
+
+    if (len(inifile) > 1):
+        print('ERROR MORE THAN ONE INI FILE')
+
+    print(inifile[0])
+    config = configparser.ConfigParser()
+    config.read(inifile[0])
+
+
+    eps=config.get('VPM','C_eta',fallback='0')
+    eps = eps.replace(';','')
+
+    return( float(eps) )
+
 
 def fetch_Bs_dir(dir):
     import glob
@@ -388,6 +497,9 @@ def fetch_compression_rate_dir(dir):
 
 
 def convergence_order(N, err):
+    """ This is a small function that returns the convergence order, i.e. the least
+    squares fit to the log of the two passed lists.
+    """
     import numpy as np
 
     if len(N) != len(err):
@@ -589,16 +701,16 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
         plt.tick_params(
         axis='x',          # changes apply to the x-axis
         which='both',      # both major and minor ticks are affected
-        bottom='off',      # ticks along the bottom edge are off
-        top='off',         # ticks along the top edge are off
-        labelbottom='off') # labels along the bottom edge are off
+        bottom=False,      # ticks along the bottom edge are off
+        top=False,         # ticks along the top edge are off
+        labelbottom=False) # labels along the bottom edge are off
 
         plt.tick_params(
         axis='y',          # changes apply to the x-axis
         which='both',      # both major and minor ticks are affected
         bottom='left',      # ticks along the bottom edge are off
         top='right',         # ticks along the top edge are off
-        labelleft='off') # labels along the bottom edge are off
+        labelleft=False) # labels along the bottom edge are off
 
     plt.axis('tight')
     plt.axes().set_aspect('equal')
@@ -606,16 +718,16 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
 
     if not gridonly:
         if savepng:
-            plt.savefig( file.replace('h5','png'), dpi=dpi, transparent=True )
+            plt.savefig( file.replace('h5','png'), dpi=dpi, transparent=True, bbox_inches='tight' )
 
         if savepdf:
-            plt.savefig( file.replace('h5','pdf') )
+            plt.savefig( file.replace('h5','pdf'), bbox_inches='tight' )
     else:
         if savepng:
-            plt.savefig( file.replace('.h5','-grid.png'), dpi=dpi, transparent=True )
+            plt.savefig( file.replace('.h5','-grid.png'), dpi=dpi, transparent=True, bbox_inches='tight' )
 
         if savepdf:
-            plt.savefig( file.replace('.h5','-grid.pdf') )
+            plt.savefig( file.replace('.h5','-grid.pdf'), bbox_inches='tight' )
 
 #%%
 def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2, dim=2):
@@ -643,7 +755,7 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2, dim=2):
 
     if dim==2:
         # squeeze 3D flusi field (where dim0 == 1) to true 2d data
-        data_ref = data_ref[:,:,0].copy()
+        data_ref = data_ref[0,:,:].copy()
         box_ref = box_ref[1:2].copy()
 
     # convert wabbit to dense field
@@ -665,6 +777,32 @@ def wabbit_error_vs_flusi(fname_wabbit, fname_flusi, norm=2, dim=2):
     exc = np.ndarray.flatten(data_ref)
 
     err = np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm)
+    print( "error was e=%e" % (err) )
+
+    return err
+
+
+#%%
+def flusi_error_vs_flusi(fname_flusi1, fname_flusi2, norm=2, dim=2):
+    """ compute error given two flusi fields
+    """
+    import numpy as np
+    import insect_tools
+
+    # read in flusi's reference solution
+    time_ref, box_ref, origin_ref, data_ref = insect_tools.read_flusi_HDF5( fname_flusi1 )
+
+    time, box, origin, data_dense = insect_tools.read_flusi_HDF5( fname_flusi2 )
+
+    if len(data_ref) is not len(data_dense):
+        raise ValueError("ERROR! Both fields are not a the same resolutionn")
+
+    err = np.ndarray.flatten(data_dense-data_ref)
+    exc = np.ndarray.flatten(data_ref)
+
+    err = np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm)
+
+    print( "error was e=%e" % (err) )
 
     return err
 
@@ -722,13 +860,13 @@ def dense_matrix(  x0, dx, data, treecode, dim=2 ):
         nx = int( np.sqrt(N)*(Bs-1) )
     else:
         nx = int( math.pow(N,1.0/dim)*(Bs-1)) +1
-    
+
     # all spacings should be the same - it does not matter which one we use.
     ddx = dx[0,0]
 
     print("Number of blocks %i" % (N))
     print("Spacing %e domain %e" % (ddx, ddx*nx))
-    
+
     if dim==2:
         # allocate target field
         field = np.zeros([nx,nx])
@@ -737,7 +875,7 @@ def dense_matrix(  x0, dx, data, treecode, dim=2 ):
         box = [dx[0,0]*nx, dx[0,1]*nx]
     else:
         # allocate target field
-        field = np.zeros([nx,nx,nx])        
+        field = np.zeros([nx,nx,nx])
         print("Dense field resolution %i x %i x %i" % (nx, nx, nx) )
         # domain size
         box = [dx[0,0]*nx, dx[0,1]*nx, dx[0,2]*nx]
@@ -757,3 +895,29 @@ def dense_matrix(  x0, dx, data, treecode, dim=2 ):
             field[ ix0:ix0+Bs-1, iy0:iy0+Bs-1 ] = data[i,0:-1,0:-1]
 
     return(field, box)
+
+#%%
+def prediction1D( signal1, order=4 ):
+    import numpy as np
+
+    N = len(signal1)
+
+    signal_interp = np.zeros( [2*N-1] ) - 7
+
+#    function f_fine = prediction1D(f_coarse)
+#    % this is the multiresolution predition operator.
+#    % it pushes a signal from a coarser level to the next higher by
+#    % interpolation
+
+    signal_interp[0::2] = signal1
+
+    a =   9.0/16.0
+    b =  -1.0/16.0
+
+    signal_interp[1]  = (5./16.)*signal1[0] + (15./16.)*signal1[1] -(5./16.)*signal1[2] +(1./16.)*signal1[3]
+    signal_interp[-2] = (1./16.)*signal1[-4] -(5./16.)*signal1[-3] +(15./16.)*signal1[-2] +(5./16.)*signal1[-1]
+
+    for k in range(1,N-2):
+        signal_interp[2*k+1] = a*signal1[k]+a*signal1[k+1]+b*signal1[k-1]+b*signal1[k+2]
+
+    return signal_interp
