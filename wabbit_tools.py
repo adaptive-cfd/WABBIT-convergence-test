@@ -52,7 +52,7 @@ def get_ini_parameter( inifile, section, keyword, dtype=float ):
         raise ValueError("Stupidest error of all: we did not find the INI file.")
 
     # initialize parser object
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(allow_no_value=True)
     # read (parse) inifile.
     config.read(inifile)
 
@@ -426,15 +426,7 @@ def fetch_eps_dir(dir):
     if (len(inifile) > 1):
         print('ERROR MORE THAN ONE INI FILE')
 
-    print(inifile[0])
-    config = configparser.ConfigParser()
-    config.read(inifile[0])
-
-
-    eps=config.get('Blocks','eps',fallback='0')
-    eps = eps.replace(';','')
-
-    return( float(eps) )
+    return( get_ini_parameter(inifile[0], 'Blocks', 'eps') )
 
 
 def fetch_Ceta_dir(dir):
@@ -451,15 +443,7 @@ def fetch_Ceta_dir(dir):
     if (len(inifile) > 1):
         print('ERROR MORE THAN ONE INI FILE')
 
-    print(inifile[0])
-    config = configparser.ConfigParser()
-    config.read(inifile[0])
-
-
-    eps=config.get('VPM','C_eta',fallback='0')
-    eps = eps.replace(';','')
-
-    return( float(eps) )
+    return( get_ini_parameter(inifile[0], 'VPM', 'C_eta') )
 
 
 def fetch_Bs_dir(dir):
@@ -476,15 +460,8 @@ def fetch_Bs_dir(dir):
     if (len(inifile) > 1):
         print('ERROR MORE THAN ONE INI FILE')
 
-    print(inifile[0])
-    config = configparser.ConfigParser()
-    config.read(inifile[0])
+    return( get_ini_parameter(inifile[0], 'Blocks', 'number_block_nodes') )
 
-
-    Bs=config.get('Blocks','number_block_nodes',fallback='0')
-    Bs = Bs.replace(';','')
-
-    return( float(Bs) )
 
 def fetch_jmax_dir(dir):
     import glob
@@ -500,15 +477,7 @@ def fetch_jmax_dir(dir):
     if (len(inifile) > 1):
         print('ERROR MORE THAN ONE INI FILE')
 
-    print(inifile[0])
-    config = configparser.ConfigParser()
-    config.read(inifile[0])
-
-
-    eps=config.get('Blocks','max_treelevel',fallback='0')
-    eps = eps.replace(';','')
-
-    return( float(eps) )
+    return( get_ini_parameter(inifile[0], 'Blocks', 'max_treelevel') )
 
 
 def fetch_compression_rate_dir(dir):
