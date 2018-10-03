@@ -7,6 +7,7 @@ import glob
 import configparser
 import datetime
 import os
+import sys
 
 class bcolors:
         HEADER = '\033[95m'
@@ -23,15 +24,20 @@ print("----------------------------------------")
 print(" Remaining walltime estimator for wabbit")
 print("----------------------------------------")
 
+if len(sys.argv) > 1:
+    dir = sys.argv[1]
+else:
+    dir = './'
 
-if not os.path.isfile('timesteps_info.t'):
+
+if not os.path.isfile(dir + 'timesteps_info.t'):
     raise ValueError("The file timesteps_info.t has not been found here.")
 
 # load the data file
-d = insect_tools.load_t_file('timesteps_info.t')
+d = insect_tools.load_t_file(dir + 'timesteps_info.t')
 
 # look for the ini file, this gives us the information at what time the run is done
-inifile = glob.glob('*.ini')
+inifile = glob.glob(dir + '*.ini')
 
 if (len(inifile) > 1):
     raise ValueError('ERROR MORE THAN ONE INI FILE in this directory.')
