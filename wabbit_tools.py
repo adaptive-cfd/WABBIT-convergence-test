@@ -50,6 +50,8 @@ def read_wabbit_hdf5(file):
 
     return time, x0, dx, box, data, treecode
 
+# %%
+
 
 def wabbit_error(dir, show=False, norm=2, file=None):
     import numpy as np
@@ -134,6 +136,7 @@ def wabbit_error(dir, show=False, norm=2, file=None):
 
     return( np.linalg.norm(err, ord=norm) / np.linalg.norm(exc, ord=norm) )
 
+# %%
 
 def key_parameters(dir):
     import configparser
@@ -156,6 +159,8 @@ def key_parameters(dir):
     namestring = adapt_mesh+adapt_inicond+eps
 
     print(namestring)
+
+# %%
 
 
 def fetch_dt_dir(dir):
@@ -366,7 +371,7 @@ def convergence_order(N, err):
 def plot_wabbit_dir(d, savepng=False):
     import glob
 
-    files = glob.glob(d+'/phi_*.h5')
+    files = glob.glob(d+'/*.h5')
     files.sort()
 
     for file in files:
@@ -400,10 +405,10 @@ def get_max_min_level( treecode ):
     return min_level, max_level
 
 
-
+# %%
 def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=None, caxis_symmetric=False, title=True, mark_blocks=True,
-                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300, block_edge_color='k', shading='flat',
-                     gridonly_coloring='mpirank', flipud=False ):
+                     gridonly=False, contour=False, ax=None, fig=None, ticks=True, colorbar=True, dpi=300, block_edge_color='k',block_edge_alpha=0.5 , shading='flat',
+                     gridonly_coloring='mpirank', flipud=False):
 
     """ Read a (2D) wabbit file and plot it as a pseudocolor plot.
 
@@ -411,6 +416,9 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
         * savepng directly store a image file
         * cmap colormap for data
         * caxis manually specify glbal min / max for color plot
+        * block_edge_alpha and block_edge_color defines the transparency
+        and color of the blocks
+         
     """
     import numpy as np
     import matplotlib.patches as patches
@@ -508,7 +516,7 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
 
             if mark_blocks and not gridonly:
                 # empty rectangle
-                ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor=block_edge_color ))
+                ax.add_patch( patches.Rectangle( (x0[i,1],x0[i,0]), (Bs-1)*dx[i,1], (Bs-1)*dx[i,0], fill=False, edgecolor=block_edge_color, alpha=block_edge_alpha ))
 
             # unfortunately, each patch of pcolor has its own colorbar, so we have to take care
             # that they all use the same.
