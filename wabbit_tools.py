@@ -48,9 +48,6 @@ def check_parameters_for_stupid_errors( file ):
     if exists_ini_parameter( file, "Physics", "initial_cond" ) :
         warn('Found deprecated parameter: [Physics]::initial_cond')
 
-    if exists_ini_parameter( file, "Physics", "initial_cond" ) :
-        warn('Found deprecated parameter: [Physics]::initial_cond')
-
     if exists_ini_parameter( file, "Dimensionality", "dim" ) :
         warn('Found deprecated parameter: [Dimensionality]::dim')
 
@@ -60,7 +57,18 @@ def check_parameters_for_stupid_errors( file ):
     if exists_ini_parameter( file, "Time", "time_step_calc" ) :
         warn('Found deprecated parameter: [Time]::time_step_calc')
 
-
+    # loop over ini file and check that each non-commented line with a "=" contains the trailing semicolon ";"
+    with open(file) as f:
+        # loop over all lines
+        linenumber = 0
+        for line in f:
+            # remove trailing & leading spaces
+            line = line.strip()
+            linenumber += 1
+            if line is not "" :
+                if line[0] is not "!" and line[0] is not "#" and line[0] is not ";" :
+                    if "=" in line and ";" not in line:
+                        warn( ('It appears the line #%i ' % (linenumber)) + '\n'+line+bcolors.FAIL+'\n does not contain the semicolon' + bcolors.ENDC )
 
 #%%
 def get_ini_parameter( inifile, section, keyword, dtype=float ):
@@ -651,7 +659,7 @@ def plot_wabbit_file( file, savepng=False, savepdf=False, cmap='rainbow', caxis=
         * caxis manually specify glbal min / max for color plot
         * block_edge_alpha and block_edge_color defines the transparency
         and color of the blocks
-         
+
     """
     import numpy as np
     import matplotlib.patches as patches
