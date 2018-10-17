@@ -156,6 +156,96 @@ def get_inifile_dir( dir ):
     else:
         return inifile[0]
 
+#%%
+def prepare_resuming_backup( inifile, state_vector_prefixes=['ux','uy','uz','p'] ):
+    """ we look for the latest *.h5 files
+        to resume the simulation, and prepare the INI file accordingly.
+        Some errors are caught.
+    """
+    import numpy as np
+    import os
+    import glob
+    import insect_tools
+
+    # does the ini file exist?
+    if not os.path.isfile(inifile):
+        raise ValueError("Inifile not found!")
+
+    # find list of H5 files for first prefix.
+    files = glob.glob( state_vector_prefixes[0] + "*.h5" )
+    files.sort()
+
+    if not files:
+        raise ValueError( "Something is wrong: no h5 files found for resuming" )
+
+    print('Latest file is: ' + files[-1])
+    timestamp = insect_tools.get_timestamp_name( files[-1] )
+    t0 = float(timestamp) / 1e6
+    print('Latest file is at time: %f' % (t0))
+
+    d = np.loadtxt('timesteps_info.t')
+    t1 = d[-1,0]
+    print('Last time stamp in logs is: %f' % (t1))
+
+    # time check when resuming a backup
+    if t0 > t1:
+        raise ValueError( "Something is wrong: the latest H5 file is at LATER time than the log files. Is this the right data?" )
+
+    if t0 < 1.0e-6:
+        print( "Something is wrong: the latest H5 file is almost at t=0. That means no backup has been saved?" )
+
+    if t1 > t0:
+        print('Warning: the latest H5 file is younger than the last entry in the log: we will have to compute some times twice.')
+
+    if abs(t1-t0) < 1.0e-4:
+        print('Good news: timestamp in H5 file and time in log file match!')
+
+
+    # check if all required input files exist
+    for prefix in state_vector_prefixes:
+        if not os.path.isfile( prefix + '_' + timestamp + '.h5'):
+            raise ValueError( "file not found!!!! " + prefix + '_' + timestamp + '.h5' )
+
+
+    # create the string we will put in the ini file
+    infiles_string = ""
+    for prefix in state_vector_prefixes:
+        infiles_string += prefix + '_' + timestamp + '.h5' + ' '
+
+    # remove trailing space:
+    infiles_string = infiles_string.strip()
+    # add colon
+    infiles_string += ';'
+    # information (debug)
+    print(infiles_string)
+
+    f1 = open( inifile, 'r')
+    f2 = open( inifile+'.tmptmp', 'w')
+    found, okay1, okay2 = False, False, False
+
+    for line in f1:
+        # remove trailing space:
+        line_cpy = line.strip()
+
+        if '[Physics]' in line_cpy:
+            found = True
+
+        if 'read_from_files=' in line_cpy and found and line_cpy[0] is not ";":
+            line = "read_from_files=1;\n"
+            okay1 = True
+
+        if 'input_files=' in line_cpy and found and line_cpy[0] is not ";":
+            line = "input_files=" + infiles_string + "\n"
+            okay2 = True
+
+        f2.write( line )
+
+    f1.close()
+    f2.close()
+
+    if okay1 and okay2:
+        os.rename( inifile+'.tmptmp', inifile )
+
 
 #%%
 def block_level_distribution_file( file ):
