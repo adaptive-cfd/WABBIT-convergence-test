@@ -71,12 +71,13 @@ def check_parameters_for_stupid_errors( file ):
                         warn( ('It appears the line #%i ' % (linenumber)) + '\n'+line+bcolors.FAIL+'\n does not contain the semicolon' + bcolors.ENDC )
 
 #%%
-def get_ini_parameter( inifile, section, keyword, dtype=float ):
+def get_ini_parameter( inifile, section, keyword, dtype=float, vector=False ):
     """ From a given ini file, read [Section]::keyword and return the value
         If the value is not found, an error is raised
     """
     import configparser
     import os
+    import numpy as np
 
     # check if the file exists, at least
     if not os.path.isfile(inifile):
@@ -94,10 +95,18 @@ def get_ini_parameter( inifile, section, keyword, dtype=float ):
     if value_string is 'UNKNOWN':
         raise ValueError("NOT FOUND! file=%s section=%s keyword=%" % (inifile, section, keyword) )
 
-    # configparser returns "0.0;" so remove trailing ";"
-    value_string = value_string.replace(';', '')
+    if not vector:
+        # configparser returns "0.0;" so remove trailing ";"
+        value_string = value_string.replace(';', '')
+        return dtype(value_string)
+    else:
+        # you can use the strip() to remove trailing and leading spaces.
+        value_string = value_string.replace(';', '')
+        value_string.strip()
+        l = value_string.split()
+        return np.asarray( [float(i) for i in l] )
 
-    return dtype(value_string)
+
 
 #%%
 def exists_ini_parameter( inifile, section, keyword ):
