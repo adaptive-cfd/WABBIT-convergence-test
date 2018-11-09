@@ -22,6 +22,7 @@ class bcolors:
 
 print("----------------------------------------")
 print(" Remaining walltime estimator for wabbit")
+print(" usage: wabboit-time-left.py ./ PARAMS.ini")
 print("----------------------------------------")
 
 if len(sys.argv) > 1:
@@ -43,10 +44,7 @@ if not os.path.isfile(dir + 'timesteps_info.t'):
 d = insect_tools.load_t_file(dir + 'timesteps_info.t')
 
 # look for the ini file, this gives us the information at what time the run is done
-inifile = glob.glob(dir + '*.ini')
-
-if (len(inifile) > 1):
-    raise ValueError('ERROR MORE THAN ONE INI FILE in this directory.')
+inifile = [sys.argv[2]]
 
 
 print("We found and extract the final time in the simulation from: "+inifile[0])
@@ -70,3 +68,8 @@ time_left = round(nt_left * tcpu_avg)
 print("Time to reach: T=%e. Now: we did nt=%i to reach T=%e and the remaing time is: %s%s%s"
       % (T, nt_now, d[-1,0], bcolors.OKGREEN, str(datetime.timedelta(seconds=time_left)), bcolors.ENDC ) )
 
+nt = 20
+dt = ( d[-1,0]-d[-nt,0] ) / nt
+time_left = np.mean( d[-nt:,1] ) * (T-d[-1,0]) / (dt)
+print("Based on last %i time steps, the remaing time is: %s%s%s"
+      % (nt, bcolors.OKGREEN, str(datetime.timedelta(seconds=time_left)), bcolors.ENDC ) )

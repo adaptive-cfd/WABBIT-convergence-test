@@ -171,6 +171,8 @@ def prepare_resuming_backup( inifile, state_vector_prefixes=['ux','uy','uz','p']
     if not os.path.isfile(inifile):
         raise ValueError("Inifile not found!")
 
+    Tmax = get_ini_parameter(inifile, "Time", "time_max", float)
+
     # find list of H5 files for first prefix.
     files = glob.glob( state_vector_prefixes[0] + "*.h5" )
     files.sort()
@@ -178,10 +180,10 @@ def prepare_resuming_backup( inifile, state_vector_prefixes=['ux','uy','uz','p']
     if not files:
         raise ValueError( "Something is wrong: no h5 files found for resuming" )
 
-    print('Latest file is: ' + files[-1])
+    print('Latest file is:           ' + files[-1])
     timestamp = insect_tools.get_timestamp_name( files[-1] )
     t0 = float(timestamp) / 1e6
-    print('Latest file is at time: %f' % (t0))
+    print('Latest file is at time:   %f' % (t0))
 
     d = np.loadtxt('timesteps_info.t')
     t1 = d[-1,0]
@@ -189,10 +191,10 @@ def prepare_resuming_backup( inifile, state_vector_prefixes=['ux','uy','uz','p']
 
     # time check when resuming a backup
     if t0 > t1:
-        raise ValueError( "Something is wrong: the latest H5 file is at LATER time than the log files. Is this the right data?" )
+        print( "Something is wrong: the latest H5 file is at LATER time than the log files. Is this the right data?" )
 
     if t0 < 1.0e-6:
-        print( "Something is wrong: the latest H5 file is almost at t=0. That means no backup has been saved?" )
+        print("Something is wrong: the latest H5 file is almost at t=0. That means no backup has been saved?" )
 
     if t1 > t0:
         print('Warning: the latest H5 file is younger than the last entry in the log: we will have to compute some times twice.')
@@ -200,6 +202,8 @@ def prepare_resuming_backup( inifile, state_vector_prefixes=['ux','uy','uz','p']
     if abs(t1-t0) < 1.0e-4:
         print('Good news: timestamp in H5 file and time in log file match!')
 
+    if t1 >= 0.99*Tmax or t0 >= 0.99*Tmax:
+        raise ValueError( "Something is wrong: the run seems to be already finnished!" )
 
     # check if all required input files exist
     for prefix in state_vector_prefixes:
