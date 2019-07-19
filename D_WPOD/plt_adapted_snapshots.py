@@ -19,6 +19,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
+import wabbit_tools as wt
 ###############################################################################
 # LATEX FONT
 font = {'family' : 'serif',
@@ -34,7 +35,7 @@ eps_list = [100, 10, 1, 0.1, 0.01, 0.001]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
 ###############################################################################
 # %% get the data
-quantity="vorx"
+quantity="vorx-sparse"
 plt.close("all")
 
 for i, eps_dir in enumerate(eps_dir_list):
@@ -53,8 +54,10 @@ for i, eps_dir in enumerate(eps_dir_list):
        # ax.set_xlabel("$x$")
         #ax.set_ylabel("$y$")
         ax.set_aspect('equal')
+
         #cb.set_label("vorticity [1/s]")
         print("Saving plot to: "+pic_dir+plt_file)
         plt.savefig( pic_dir+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
-        plt.close()
-   
+        plt.show()
+
+##############################################################################

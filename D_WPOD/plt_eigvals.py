@@ -12,7 +12,7 @@ Tasks of this skript:
 #           MODULES
 ###############################################################################
 import os
-import farge_colormaps
+#import farge_colormaps
 import glob
 from wPODdirs import *
 import matplotlib
@@ -29,8 +29,8 @@ rc('text', usetex=True)
 ###############################################################################
 # Specify:
 
-#eps_list = [100, 10, 1, 0.1, 0.01, 0.001, 0]
-eps_list = [ 0.1,  0]
+eps_list = [100, 10, 1, 0.1, 0.01, 0.001, 0]
+#eps_list = [ 0.1,  0]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
 ###############################################################################
 # %% get the data

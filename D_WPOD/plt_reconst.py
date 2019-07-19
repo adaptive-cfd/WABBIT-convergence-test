@@ -51,11 +51,11 @@ for iter,file in enumerate(files[::step]):
         flusi.crop_flusi_HDF5(file,Nxcut,Nycut)
 
 # %% convert and adapt
-wt.flusi_to_wabbit_dir(resdir+'wPOD/reconstruct/', resdir+'wPOD/reconstruct/',level=4 )
 #wt.command_on_each_hdf5_file("/home/phil/devel/results/cyl_POD/wPOD/reconstruct/",\
 #                            "/home/phil/devel/WABBIT/wabbit-post --dense-to-sparse --eps=0.1 %s")
 # %% Plot flusi original files:        
-files = glob.glob(resdir+'/wPOD/reconstruct/'+'/*.h5')
+index = 4
+files = glob.glob(eps_dir_list[index]+'/reconst*.h5')
 files.sort()
 Nt=len(files)
 Npics=Nt
@@ -63,6 +63,7 @@ step=Nt//Npics
 for iter,file in enumerate(files[::step]):
     plt_file = file.split("/")[-1]
     plt_file = plt_file.replace('h5','png')
+    plt_file = plt_file.replace("reconst","reconst-"+eps_dir_list[index]+"-")
     fig, ax = plt.subplots() 
     ax,cb = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=300,\
                                 shading='gouraud',caxis=[-10,10],block_edge_alpha=0.2,\

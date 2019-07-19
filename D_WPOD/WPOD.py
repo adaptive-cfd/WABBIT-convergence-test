@@ -23,6 +23,7 @@ import insect_tools
 import os
 import farge_colormaps
 import glob
+from wPODdirs import *
 from matplotlib import rc
 font = {'family' : 'sans-serif',
         'sans-serif':['Helvetica'],
@@ -132,7 +133,7 @@ for iter,file in enumerate(files[::step]):
         plt.close() 
         
 # %% Plot WABBIT MODES:
-index=-2
+index=5
 files = glob.glob(eps_dir_list[index]+'/'+'/*.h5')
 files.sort()
 Nt=len(files)
@@ -140,7 +141,7 @@ Npics=Nt
 step=Nt//Npics
 for iter,file in enumerate(files[::step]):
     plt_file = file.split("/")[-1]
-    plt_file = plt_file.replace("PODmode","PODmode-"+eps_dir_list[index])
+    plt_file = plt_file.replace("mode1","mode-"+eps_dir_list[index])
     plt_file = plt_file.replace('.h5','.png')
     fig, ax = plt.subplots() 
     ax,cb = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=300, ticks=False,\
@@ -151,10 +152,48 @@ for iter,file in enumerate(files[::step]):
     #ax.set_ylabel("$y$")
     ax.set_aspect('equal')
    # cb.set_label("vorticity [1/s]")
-    plt.savefig( pic_dir+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
+    plt.savefig( pic_dir+"/"+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
     plt.close()
     
 # %% PLOT WABBIT PROCS:
+index = 3
+files = glob.glob(eps_dir_list[index]+'/'+'/*.h5')
+files.sort()
+Nt=len(files)
+Npics=Nt
+step=Nt//Npics
+for iter,file in enumerate(files[::step]):
+    plt_file = file.split("/")[-1]
+    plt_file_procs = plt_file.replace('.h5','2procs.png')
+    plt_file_field = plt_file.replace('.h5','2field.png')
+    fig, ax = plt.subplots() 
+    ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud', \
+                   caxis=[0,4],block_edge_alpha=1,colorbar_orientation="horizontal", \
+                   gridonly=True,cmap=plt.get_cmap("Accent"),ticks=False,\
+                   colorbar=False,title=False)
+    #ax.set_title("Mode $\phi^\epsilon_{"+str(iter*step)+"}(\mathbf{x})$ ")
+   # ax.set_xlabel("$x$")
+    #ax.set_ylabel("$y$")
+    ax.set_aspect('equal')
+   # cb.set_label("vorticity [1/s]")
+    plt.savefig( pic_dir+plt_file_procs, dpi=300, transparent=True, bbox_inches='tight' )
+    plt.close()
+    
+    ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud',\
+                  block_edge_alpha=1,colorbar_orientation="horizontal", \
+                   gridonly=False,cmap=fc,ticks=False,\
+                   colorbar=False,title=False,caxis=[-5,5])
+    #ax.set_title("Mode $\phi^\epsilon_{"+str(iter*step)+"}(\mathbf{x})$ ")
+   # ax.set_xlabel("$x$")
+    #ax.set_ylabel("$y$")
+    ax.set_aspect('equal')
+   # cb.set_label("vorticity [1/s]")
+    plt.savefig( pic_dir+plt_file_field, dpi=300, transparent=True, bbox_inches='tight' )
+    plt.close()
+    
+    
+# %% DAEDALUS pics
+    
     
 files = glob.glob(daedalus_pic_dir+'/'+'/dadd.h5')
 files.sort()

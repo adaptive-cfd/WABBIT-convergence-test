@@ -17,9 +17,10 @@ pic_dir = "./images/"
 #wdir = "/home/krah/develop/WABBIT/"++
 wdir = home+"/WABBIT/"
 # 3.) results to compare data to
-resdir_flusi="../results/cyl_POD/wPOD/vor_crop/"
+resdir_flusi="../../results/cyl_POD/wPOD/vor_crop/"
 resdir_flusi_modes="../results/cyl_POD/vorticity_POD2/modes/"
 # 4.) Where should wabbit-post save its data
 resdir_wPOD_modes=home+"/develop/WABBIT/19.04.19/"
 resdir_wabbit =resdir_flusi + "_adapt/"
 ###############################################################################
+eps_list = [100, 10, 1, 0.1, 0.01, 0.001, 0]
