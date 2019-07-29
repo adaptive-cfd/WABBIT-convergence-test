@@ -31,14 +31,14 @@ rc('text', usetex=True)
 fc = farge_colormaps.farge_colormap_multi( taille=600,limite_faible_fort=0.2, etalement_du_zero=0.04, type='vorticity' )
 ###############################################################################
 # Specify:
-eps_list = [100, 10, 1, 0.1, 0.01, 0.001]
+#eps_list = [10, 0.1, 0.01, 0.001, 0.001]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
 ###############################################################################
 # %% get the data
 quantity="vorx-sparse"
 plt.close("all")
 
-for i, eps_dir in enumerate(eps_dir_list):
+for i, eps_dir in enumerate(eps_dir_list[::5]):
     files = glob.glob(eps_dir+'/'+quantity+'_*.h5')
     files.sort()
     for file in files:

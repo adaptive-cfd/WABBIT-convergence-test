@@ -17,6 +17,7 @@ import os
 import farge_colormaps
 import glob
 from matplotlib import rc
+from wPODdirs import *
 font = {'family' : 'sans-serif',
         'sans-serif':['Helvetica'],
         'size'   : 22}
