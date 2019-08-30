@@ -33,13 +33,12 @@ rc('text', usetex=True)
 
 
 pic_dir = "./images/"
-Jmax_list = [  5, 6, 7];
+Jmax_list = [ 4, 5, 6, 7, 8];
 #wdir = "/home/krah/develop/WABBIT/"
 wdir = "~/savart/develop/WABBIT/"
-resdir_flusi=home+"/develop/results/cyl_POD/wPOD/vor_crop"
+resdir_flusi=home+"/develop/results/cyl/wPOD/vor_up"
 resdir_wabbit =resdir_flusi + "_adapt/"
 Jmax_dir_list=[resdir_wabbit+"Jmax"+str(Jmax) for Jmax in Jmax_list]
-
 
 
 

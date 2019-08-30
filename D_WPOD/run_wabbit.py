@@ -18,12 +18,12 @@ import numpy as np
 from wPODdirs import *
 # %% Change parameters here:
 wdir = home + "/develop/WABBIT/"                                              # directory of wabbit-post 
-data_folder = home + "/develop/results/cyl/wPOD/vor_crop_adapt"          # datafolder you want to use for POD
+data_folder = home + "/develop/results/cyl/wPOD/vor_up_adapt"          # datafolder you want to use for POD
 data_lists = [data_folder+"/vorx_list.txt"]
 mode_lists = ["mode1_list.txt"]
 reconstructed_iteration=5
 mpicommand = "mpirun -np 4"                                                    # mpi command used for parallel execution
-memory ="--memory=16GB"                                                         # how much memory (RAM) available on your pc
+memory ="--memory=32GB"                                                         # how much memory (RAM) available on your pc
 qname= "vorx"           #name of quantity
 
 
@@ -81,8 +81,54 @@ def run_wPOD_for_different_eps(wdir, data_lists , eps_list, Jmax, memory, mpicom
     return success
 
 # %% reconstruct for different eps:
-def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, \
-                                              iteration , memory, mpicommand):    
+def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, \
+                                              iteration, memory, mpicommand):    
+    
+    data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
+    command = mpicommand + " " +  wdir + \
+             "wabbit-post --POD-reconstruct a_coefs.txt --nmodes=30 " + \
+             " --adapt=%s --components=1 --list " + data +" "+ memory \
+             + " --timestep="+str(iteration)
+             
+    Jmaxdir = "Jmax"+str(Jmax)
+    if not os.path.exists(Jmaxdir):
+            os.mkdir(Jmaxdir) # make directory for saving the files  
+    os.chdir(Jmaxdir)       
+    for eps in eps_list:
+        # -----------------------------
+        # Prepare to save data from POD
+        # -----------------------------
+        c = command % str(eps)   # change eps
+        c += " > reconstruct.log" 
+        save_dir = "eps" + str(eps)
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir) # make directory for saving the files
+        os.chdir(save_dir)
+        # generate lists of POD modes needed for reconstruction
+        success=generate_list_of_name_in_dir( 'mode',  '.' )
+        if not success:
+            print('no mode lists generated for eps=', eps)
+            break
+        # -----------------------------
+        # Execute Command
+        # -----------------------------
+        print("\n\n###################################################################")
+        print("\t\teps =",eps)
+        print("###################################################################")
+        print("\n",c,"\n\n")
+        success = os.system(c)   # execute command
+        os.chdir("../")
+        if success != 0:
+            print("command did not execute successfully")
+            break
+        return success
+    
+    # go back to original directory
+    os.chdir("../")
+    
+# %% reconstruct for different eps:
+def run_wPODerr_for_different_eps(wdir, data_lists, eps_list,  Jmax , \
+                iteration, memory, mpicommand):    
     
     data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
     command = mpicommand + " " +  wdir + \
@@ -223,6 +269,6 @@ for Jmax in Jmax_list:
     success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
     if not success: break
     run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
-    #run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, \
-     #                                     reconstructed_iteration, memory, mpicommand)   
-    #adpatation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
+    run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax \
+                                          reconstructed_iteration, memory, mpicommand)   
+    adpatation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
