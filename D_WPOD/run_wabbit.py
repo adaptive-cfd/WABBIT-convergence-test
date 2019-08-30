@@ -16,16 +16,16 @@ import os
 import glob
 import numpy as np
 from wPODdirs import *
+###############################################################################
 # %% Change parameters here:
-wdir = home + "/develop/WABBIT/"                                              # directory of wabbit-post 
-data_folder = home + "/develop/results/cyl/wPOD/vor_up_adapt"          # datafolder you want to use for POD
+###############################################################################
+# datafolder you want to use for POD
+data_folder = home + "/develop/results/cyl/wPOD/vor_up_adapt"          
 data_lists = [data_folder+"/vorx_list.txt"]
 mode_lists = ["mode1_list.txt"]
 reconstructed_iteration=5
-mpicommand = "mpirun -np 4"                                                    # mpi command used for parallel execution
-memory ="--memory=32GB"                                                         # how much memory (RAM) available on your pc
-qname= "vorx"           #name of quantity
-
+qname      = "vorx"           #name of quantity
+###############################################################################
 
 # %% run wPOD for different eps:
 def run_wPOD_for_different_eps(wdir, data_lists , eps_list, Jmax, memory, mpicommand, save_log=False):
@@ -121,44 +121,58 @@ def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, 
         if success != 0:
             print("command did not execute successfully")
             break
-        return success
+
     
     # go back to original directory
     os.chdir("../")
+    return success
     
 # %% reconstruct for different eps:
-def run_wPODerr_for_different_eps(wdir, data_lists, eps_list,  Jmax , \
-                iteration, memory, mpicommand):    
+def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
+                iteration, memory, mpicommand): 
     
+    # in the first step we make a concatenatet string form all elements in the
+    # snapshot and mode lists
     data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
-    command = mpicommand + " " +  wdir + \
-             "wabbit-post --POD-reconstruct a_coefs.txt --nmodes=30 " + \
-             " --adapt=%s --components=1 --list " + data +" "+ memory \
-             + " --timestep="+str(iteration)
-             
+    modes = " ".join(str(mode_lists[i]) for i in range(len(mode_lists)))
+    
+    # command executed for every eps
+    command = mpicommand + " " \
+             +  wdir + "wabbit-post --POD-error a_coefs.txt "  \
+             + " --adapt=%s --components=1" \
+             + " --snapshot-list " + data \
+             + " --mode-list "     + modes\
+             +" "+ memory \
+    
+    # generate new Jmaxdir if not exist         
     Jmaxdir = "Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
             os.mkdir(Jmaxdir) # make directory for saving the files  
     os.chdir(Jmaxdir)       
+    
+    # loops over all eps-thresholds
     for eps in eps_list:
         # -----------------------------
         # Prepare to save data from POD
         # -----------------------------
         c = command % str(eps)   # change eps
-        c += " > reconstruct.log" 
+        c += " > wPODerror.log"
+        
         save_dir = "eps" + str(eps)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir) # make directory for saving the files
         os.chdir(save_dir)
+        
         # generate lists of POD modes needed for reconstruction
         success=generate_list_of_name_in_dir( 'mode',  '.' )
         if not success:
             print('no mode lists generated for eps=', eps)
             break
+        
         # -----------------------------
         # Execute Command
         # -----------------------------
-        print("\n\n###################################################################")
+        print("\n\n###############################################################")
         print("\t\teps =",eps)
         print("###################################################################")
         print("\n",c,"\n\n")
@@ -167,10 +181,10 @@ def run_wPODerr_for_different_eps(wdir, data_lists, eps_list,  Jmax , \
         if success != 0:
             print("command did not execute successfully")
             break
-        return success
-    
+        
     # go back to original directory
     os.chdir("../")
+    return success
     
 # % generate mode list for different eps
 def generate_list_of_name_in_dir( name, directory, save_dir=None ):
@@ -206,7 +220,7 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None ):
     return n_component>0,fname_list
 
 # %% adapt one snapshot for different eps: logfile written in adapt .log
-def adpatation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand, create_log_file=True):
+def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand, create_log_file=True):
     
     # generate new file names
     h5_fname =  glob.glob(data_folder+'/Jmax'+str(Jmax)+'/*.h5')[11]
@@ -263,12 +277,32 @@ def adpatation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
 # %% run scripts:
 #run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, \
 #                                          reconstructed_iteration, memory, mpicommand)
-    
+
+memory = wabbit_setup["memory"]
+mpicommand = wabbit_setup["mpicommand"]
+
 for Jmax in Jmax_list:
     folder = data_folder + "/Jmax" + str(Jmax) +"/"
     success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
-    if not success: break
-    run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
-    run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax \
+    
+    success += run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
+    if success!=0:
+        print("wPOD did not execute successfully")
+        break
+    
+    success += run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
                                           reconstructed_iteration, memory, mpicommand)   
-    adpatation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
+    if success!=0:
+        print("wPOD reconstruction did not execute successfully")
+        break
+    
+    success += run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
+                iteration, memory, mpicommand)
+    if success!=0:
+        print("error estimation did not execute successfully")
+        break
+    
+    success += adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
+    if success!=0:
+        print("adaptation did not execute successfully")
+        break
