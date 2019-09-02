@@ -32,36 +32,38 @@ rc('text', usetex=True)
 #eps_list = [100, 10, 1, 0.1, 0.01, 0.001, 0]
 #eps_list = [ 0.1,  0]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
+Jmax_dir_list = [ "Jmax"+str(Jmax) for Jmax in Jmax_list]
 ###############################################################################
 # %% get the data
 plt.close("all")
 eigval_list={}
 fig, ax = plt.subplots()
 markers = ['o', 'x', '+', 'v', '^', '<', '>', 's', 'd']
-for i, eps_dir in enumerate(eps_dir_list):
-    eigvals_file = eps_dir + "/eigenvalues.txt"
-    ########################
-    # get data from file
-    #######################
-    f = open(eigvals_file)
-    data_eigs = [[np.sqrt(float(num)) for num in line.split()] for line in f]
-    data_eigs = np.asarray(data_eigs)
-    f.close
-     ########################
-    # save in dictionary
-    #######################
-    key = eps_list[i]
-    eigval_list.update({ key : data_eigs})
-    ########################
-    # Do the actual plotting
-    #######################
-    if eps_list[i]==0:
-        my_label= '$\epsilon ='+str(key) +'$ (dense)'
-    else:
-        my_label= '$\epsilon ='+str(key) +'$ (sparse)'
-        
-    ax.plot(data_eigs[::-1,1], linestyle='',marker = markers[i], mfc='none',\
-                markersize=5,label=my_label)
+for j, jmax_dir in enumerate(Jmax_dir_list):
+    for i, eps_dir in enumerate(eps_dir_list):
+        eigvals_file = jmax_dir+"/"+eps_dir + "/eigenvalues.txt"
+        ########################
+        # get data from file
+        #######################
+        f = open(eigvals_file)
+        data_eigs = [[np.sqrt(float(num)) for num in line.split()] for line in f]
+        data_eigs = np.asarray(data_eigs)
+        f.close
+         ########################
+        # save in dictionary
+        #######################
+        key = eps_list[i]
+        eigval_list.update({ key : data_eigs})
+        ########################
+        # Do the actual plotting
+        #######################
+        if eps_list[i]==0:
+            my_label= '$\epsilon ='+str(key) +'$ (dense)'
+        else:
+            my_label= '$\epsilon ='+str(key) +'$ (sparse)'
+            
+        ax.plot(data_eigs[::-1,1], linestyle='',marker = markers[j], mfc='none',\
+                    markersize=5,label=my_label)
 
 ax.legend(loc='upper right')
 ax.set_yscale('log')

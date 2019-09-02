@@ -25,6 +25,7 @@ import farge_colormaps
 import glob
 from wPODdirs import *
 from matplotlib import rc
+
 font = {'family' : 'sans-serif',
         'sans-serif':['Helvetica'],
         'size'   : 22}
@@ -36,8 +37,8 @@ pic_dir = "./images/"
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
 #wdir = "/home/krah/develop/WABBIT/"
 wdir = "~/savart/develop/WABBIT/"
-#resdir_flusi="../results/cyl_POD/wPOD/vor_crop/"
-resdir_flusi_modes="../results/cyl_POD/vorticity_POD2/modes/"
+resdir_flusi=home+"/develop/results/cyl/wPOD/vor_up/"
+resdir_flusi_modes="../results/cyl/vorticity_POD2/modes/"
 resdir_wPOD_modes=eps_dir_list[2]
 resdir_wabbit =resdir_flusi + "_adapt/"
 daedalus_pic_dir = "../../results/daedalus_logo/"
@@ -56,13 +57,14 @@ files.sort()
 fig = plt.figure()
 Nxcut = [50, 206]
 Nycut = [128, 128]
+Nupsample = [4096,2048]
 Nt = len(files)
 Npics = 2
 iter=0
 step=1#Nt//Npics
 for iter,file in enumerate(files[::step]):
-        flusi.crop_flusi_HDF5(file,Nxcut,Nycut)
-       
+        #flusi.crop_flusi_HDF5(file,Nxcut,Nycut)
+        flusi.resample_flusi_HDF5(file,Nupsample)
 #        plt_file = file.split("/")[-1]
 #        plt_file = plt_file.replace('h5','png')
 #        time, box, origin, data_flusi = insect_tools.read_flusi_HDF5( file )
@@ -82,7 +84,7 @@ for iter,file in enumerate(files[::step]):
 #       # plt.pause(0.5)
 #        plt.savefig( pic_dir+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
 #        plt.close()
-        
+#        
 # %% Plot WABBIT files:
 
 files = glob.glob(wdir+'test/'+'/*.h5')

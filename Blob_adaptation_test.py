@@ -31,20 +31,39 @@ wabbit_setup = {
 # parameters to adjust
 class params:
     
-    eps_list  = np.logspace(-8,1,20)    # threshold of adaptation
-    jmax_list = [6,8,9]        # maximal tree level
+   eps_list  = np.logspace(-8,1,20)    # threshold of adaptation
+   jmax_list = [4,5,6]        # maximal tree level
     
-    class domain:
+   class domain:
         N = [2048, 2048]            # number of points for 3d use 3 elements
         L = [1.0, 1.0]              # length of domain
-        
-    def init(x,L):                             # this function will be initialized on the domain
+  
+   #exp(-(x²+y²)/2/sigma²)
+   def init2(x,L):
+       sigma = np.asarray(L)*0.01
+       x0    = [Li/2 for Li in L]
+       xrel  = [x-x0 for x,x0 in zip(x,x0)]
+       field = np.ones_like(x[0])
+       for x,s in zip(xrel,sigma):
+           field *= np.exp(-np.power(x,2)/(2*s**2))
+       return field
+    
+    ## sin(1/x)*sin(1/y)
+   def init(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
         field = np.ones_like(x[0])
         for x,s in zip(xrel,sigma):
-            field *= np.exp(-np.power(x,2)/(2*s**2))
+            field *= np.sin(-np.divide(1,np.abs(x)))
+        return field     
+    
+      ## sin(1/x)*sin(1/y)
+   def init(x,L):                             # this function will be initialized on the domain
+        sigma = np.asarray(L)*0.01
+        x0    = [Li/2 for Li in L]
+        xrel  = [x-x0 for x,x0 in zip(x,x0)]
+        field = xrel[0]**2+xrel[1]**2
         return field     
 ###############################################################################
 # %% 
@@ -81,7 +100,7 @@ def wabbit_adapt(dirs, params, wabbit_setup):
         params.Bs_list.append(Bs)        
         # adapt field for different eps using wabbit-post -dense-to-sparse
         print("\n\n###################################################################")
-        print("\n\n###################################################################")
+        print("###################################################################")
         print( "\t\tJmax: ", jmax, "\n\n")
         for k,eps in enumerate(params.eps_list):
             # create dense field and save to work
@@ -90,7 +109,7 @@ def wabbit_adapt(dirs, params, wabbit_setup):
             file = wt.dense_to_wabbit_hdf5(phi,file, Bs, params.domain.L,eps*100)
             command = mpicommand + " " +  wdir + \
                  "wabbit-post --dense-to-sparse --eps=" + str(eps) + " --order=4 " + memory + \
-                  " "+ file + ">>adapt.log"
+                  " "+ file + ">adapt.log"
                   # command for densing file again
             dense_command = mpicommand + " " +  wdir + \
                  "wabbit-post --sparse-to-dense " + \
@@ -103,7 +122,8 @@ def wabbit_adapt(dirs, params, wabbit_setup):
             print("###################################################################")
             print("\n",command,"\n\n")
             success = os.system(command)   # execute command
-            wt.plot_wabbit_file(file,savepng=True)
+            if np.mod(k,4)==0:
+                wt.plot_wabbit_file(file,savepng=True)
             compress[j,k] = sum(wt.block_level_distribution_file( file ))
              
             print("\n",dense_command,"\n\n")
@@ -159,6 +179,6 @@ ax1.set_xlim=ax2.get_xlim()
 ################################################
 # save figure
 ###############################################
-fig1.savefig( pic_dir+'blob_compression_err4th.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+#fig1.savefig( pic_dir+'blob_compression_err4th.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
 
-fig2.savefig( pic_dir+'blob_compression_rate.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+#fig2.savefig( pic_dir+'blob_compression_rate.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
