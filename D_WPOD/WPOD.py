@@ -57,7 +57,11 @@ files.sort()
 fig = plt.figure()
 Nxcut = [50, 206]
 Nycut = [128, 128]
+<<<<<<< HEAD
 Nupsample = [4096,2048]
+=======
+Nupsample = [1024*3,1024]
+>>>>>>> e238781748cef4fb6ef4e809620d430a06512ba4
 Nt = len(files)
 Npics = 2
 iter=0
