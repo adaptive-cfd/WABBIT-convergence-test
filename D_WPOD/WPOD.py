@@ -57,11 +57,7 @@ files.sort()
 fig = plt.figure()
 Nxcut = [50, 206]
 Nycut = [128, 128]
-<<<<<<< HEAD
-Nupsample = [4096,2048]
-=======
 Nupsample = [1024*3,1024]
->>>>>>> e238781748cef4fb6ef4e809620d430a06512ba4
 Nt = len(files)
 Npics = 2
 iter=0
@@ -143,63 +139,48 @@ for iter,file in enumerate(files[::step]):
         plt.close() 
         
 # %% Plot WABBIT MODES:
-index=-5
-files = glob.glob(eps_dir_list[index]+'/'+'/*.h5')
-files.sort()
-Nt=len(files)
-Npics=Nt
-step=Nt//Npics
-for iter,file in enumerate(files[::step]):
-    plt_file = file.split("/")[-1]
-    plt_file = plt_file.replace("mode1","mode-"+eps_dir_list[index])
-    plt_file = plt_file.replace('.h5','.png')
-    fig, ax = plt.subplots() 
-    ax,cb = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=300, ticks=False,\
+
+files =  []
+save_dir = "mode/"
+step=2
+if not os.path.exists(pic_dir+save_dir):
+    os.mkdir(pic_dir+save_dir) # make directory for saving the files
+
+for jmax in Jmax_list[1:2]:
+    for index,val in enumerate(eps_dir_list):
+        files = glob.glob('Jmax'+str(jmax)+'/'+eps_dir_list[index]+'/'+'/*.h5')
+        files.sort()
+        Nt=len(files)
+        Npics=Nt
+        for iter,file in enumerate(files[::step]):
+            plt_file = file.split("/")[-1]
+            plt_file = plt_file.replace("mode1","mode""-jmax"+str(jmax)+"-"+eps_dir_list[index])
+            plt_file = plt_file.replace('.h5','.png')
+            plt_file_procs = plt_file.replace("mode","mode-procs")
+           
+            ####################
+            # plot field
+            ####################
+            fig, ax = plt.subplots() 
+            ax,cb = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=300, ticks=False,\
                                 shading='gouraud',caxis=[-10,10],block_edge_alpha=0.2,\
                                 colorbar_orientation="horizontal",colorbar=False,title=False)
-    #ax.set_title("Mode $\phi^\epsilon_{"+str(iter*step)+"}(\mathbf{x})$ ")
-   # ax.set_xlabel("$x$")
-    #ax.set_ylabel("$y$")
-    ax.set_aspect('equal')
-   # cb.set_label("vorticity [1/s]")
-    plt.savefig( pic_dir+"/"+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
-    plt.close()
-    
-# %% PLOT WABBIT PROCS:
-index = 3
-files = glob.glob(eps_dir_list[index]+'/'+'/*.h5')
-files.sort()
-Nt=len(files)
-Npics=Nt
-step=Nt//Npics
-for iter,file in enumerate(files[::step]):
-    plt_file = file.split("/")[-1]
-    plt_file_procs = plt_file.replace('.h5','2procs.png')
-    plt_file_field = plt_file.replace('.h5','2field.png')
-    fig, ax = plt.subplots() 
-    ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud', \
+            ax.set_aspect('equal')
+            plt.savefig( pic_dir+"/"+save_dir+"/"+plt_file, dpi=300, transparent=True, bbox_inches='tight' )
+            plt.close()
+            
+            ###################
+            # plot procs
+            ###################
+            fig, ax = plt.subplots() 
+            ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud', \
                    caxis=[0,4],block_edge_alpha=1,colorbar_orientation="horizontal", \
                    gridonly=True,cmap=plt.get_cmap("Accent"),ticks=False,\
                    colorbar=False,title=False)
-    #ax.set_title("Mode $\phi^\epsilon_{"+str(iter*step)+"}(\mathbf{x})$ ")
-   # ax.set_xlabel("$x$")
-    #ax.set_ylabel("$y$")
-    ax.set_aspect('equal')
-   # cb.set_label("vorticity [1/s]")
-    plt.savefig( pic_dir+plt_file_procs, dpi=300, transparent=True, bbox_inches='tight' )
-    plt.close()
+            ax.set_aspect('equal')
+            plt.savefig( pic_dir+save_dir+plt_file_procs, dpi=300, transparent=True, bbox_inches='tight' )
+            plt.close()
     
-    ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud',\
-                  block_edge_alpha=1,colorbar_orientation="horizontal", \
-                   gridonly=False,cmap=fc,ticks=False,\
-                   colorbar=False,title=False,caxis=[-5,5])
-    #ax.set_title("Mode $\phi^\epsilon_{"+str(iter*step)+"}(\mathbf{x})$ ")
-   # ax.set_xlabel("$x$")
-    #ax.set_ylabel("$y$")
-    ax.set_aspect('equal')
-   # cb.set_label("vorticity [1/s]")
-    plt.savefig( pic_dir+plt_file_field, dpi=300, transparent=True, bbox_inches='tight' )
-    plt.close()
     
     
 # %% DAEDALUS pics
