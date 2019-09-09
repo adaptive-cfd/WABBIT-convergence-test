@@ -141,7 +141,8 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
              + " --adapt=%s --components=1" \
              + " --snapshot-list " + data \
              + " --mode-list "     + modes\
-             +" "+ memory \
+             + " "+ memory \
+             + " --iteration=" + str(iteration)
     
     # generate new Jmaxdir if not exist         
     Jmaxdir = "Jmax"+str(Jmax)
@@ -185,7 +186,7 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
     os.chdir("../")
     return success
     
-# % generate mode list for different eps
+# %% generate mode list for different eps
 def generate_list_of_name_in_dir( name, directory, save_dir=None ):
     import re
     
@@ -193,6 +194,11 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None ):
     h5file_names.sort()
     
     n_component = 0
+    fname_list= []
+    
+    print(" I will generate a list of files containing: " + name 
+          + " in the directory: ", directory )
+    
     while len(h5file_names)>0:
         # make a list of all h5files which contain "mode[digit]" in their name
         # Here digit is the number of the component
@@ -211,7 +217,7 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None ):
             h5file_names.remove(element)
             # write all modes of the component to to file
             absfilepath = os.path.abspath(element) + '\n'
-            print(absfilepath)
+            #print(absfilepath)
             fpointer.write(absfilepath)
         fpointer.close()
         
@@ -276,32 +282,35 @@ def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
 # %% run scripts:
 #run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, \
 #                                          reconstructed_iteration, memory, mpicommand)
-
-memory = wabbit_setup["memory"]
-mpicommand = wabbit_setup["mpicommand"]
-
-for Jmax in Jmax_list:
-    folder = data_folder + "/Jmax" + str(Jmax) +"/"
-    success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
+def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, reconstructed_iteration):
     
-    success += run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
-    if success!=0:
-        print("wPOD did not execute successfully")
-        break
-    
-    success += run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
-                                          reconstructed_iteration, memory, mpicommand)   
-    if success!=0:
-        print("wPOD reconstruction did not execute successfully")
-        break
-    
-    success += run_wPODerr_for_different_eps(wdir, [data_list], mode_lists, eps_list,  Jmax , \
-               reconstructed_iteration, memory, mpicommand)
-    if success!=0:
-        print("error estimation did not execute successfully")
-        break
-    
-    success += adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
-    if success!=0:
-        print("adaptation did not execute successfully")
-        break
+    wdir = dirs["wabbit"]
+    memory = wabbit_setup["memory"]
+    mpicommand = wabbit_setup["mpicommand"]
+    data_folder = data["folder"]
+    qname = data["qname"]
+    for Jmax in Jmax_list:
+        folder = data_folder + "/Jmax" + str(Jmax) +"/"
+        success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
+        
+        success += run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
+        if success!=0:
+            print("wPOD did not execute successfully")
+            break
+        
+        success += run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
+                                              reconstructed_iteration, memory, mpicommand)   
+        if success!=0:
+            print("wPOD reconstruction did not execute successfully")
+            break
+        
+        success += run_wPODerr_for_different_eps(wdir, [data_list], mode_lists, eps_list,  Jmax , \
+                   reconstructed_iteration, memory, mpicommand)
+        if success!=0:
+            print("error estimation did not execute successfully")
+            break
+        
+        success += adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand) 
+        if success!=0:
+            print("adaptation did not execute successfully")
+            break

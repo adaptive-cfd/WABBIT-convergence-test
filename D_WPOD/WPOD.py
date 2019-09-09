@@ -146,7 +146,7 @@ step=2
 if not os.path.exists(pic_dir+save_dir):
     os.mkdir(pic_dir+save_dir) # make directory for saving the files
 
-for jmax in Jmax_list[1:2]:
+for jmax in Jmax_list:
     for index,val in enumerate(eps_dir_list):
         files = glob.glob('Jmax'+str(jmax)+'/'+eps_dir_list[index]+'/'+'/*.h5')
         files.sort()
