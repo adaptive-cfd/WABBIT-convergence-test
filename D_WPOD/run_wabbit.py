@@ -88,7 +88,7 @@ def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, 
     command = mpicommand + " " +  wdir + \
              "wabbit-post --POD-reconstruct a_coefs.txt --nmodes=30 " + \
              " --adapt=%s --components=1 --list " + data +" "+ memory \
-             + " --timestep="+str(iteration)
+             + " --iteration="+str(iteration)
              
     Jmaxdir = "Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
@@ -135,10 +135,11 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
     data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
     modes = " ".join(str(mode_lists[i]) for i in range(len(mode_lists)))
     
+    n_components = len(data_lists)
     # command executed for every eps
     command = mpicommand + " " \
              +  wdir + "wabbit-post --POD-error a_coefs.txt "  \
-             + " --adapt=%s --components=1" \
+             + " --adapt=%s --components=" + n_components \
              + " --snapshot-list " + data \
              + " --mode-list "     + modes\
              + " "+ memory \
@@ -288,12 +289,19 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, rec
     memory = wabbit_setup["memory"]
     mpicommand = wabbit_setup["mpicommand"]
     data_folder = data["folder"]
-    qname = data["qname"]
+    qnames = data["qname"]
     for Jmax in Jmax_list:
         folder = data_folder + "/Jmax" + str(Jmax) +"/"
-        success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
+        data_lists=[]
+        for qname in qnames:
+            success,data_list= generate_list_of_name_in_dir( qname,folder,save_dir = folder )
+            data_lists.append(data_list)
+            if not success:
+                print("failed to construct file list")
+                return
         
-        success += run_wPOD_for_different_eps(wdir, [data_list], eps_list, Jmax, memory, mpicommand, save_log=True)
+        success = 0 
+        success += run_wPOD_for_different_eps(wdir, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True)
         if success!=0:
             print("wPOD did not execute successfully")
             break
@@ -304,7 +312,7 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, rec
             print("wPOD reconstruction did not execute successfully")
             break
         
-        success += run_wPODerr_for_different_eps(wdir, [data_list], mode_lists, eps_list,  Jmax , \
+        success += run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
                    reconstructed_iteration, memory, mpicommand)
         if success!=0:
             print("error estimation did not execute successfully")

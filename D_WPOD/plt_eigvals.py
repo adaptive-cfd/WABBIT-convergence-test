@@ -40,7 +40,9 @@ eigval_list={}
 fig, ax = plt.subplots()
 markers = ['o', 'x', '+', 'v', '^', '<', '>', 's', 'd']
 for j, jmax_dir in enumerate(Jmax_dir_list):
+    fig, ax = plt.subplots()
     for i, eps_dir in enumerate(eps_dir_list):
+
         eigvals_file = jmax_dir+"/"+eps_dir + "/eigenvalues.txt"
         ########################
         # get data from file
@@ -62,12 +64,12 @@ for j, jmax_dir in enumerate(Jmax_dir_list):
         else:
             my_label= '$\epsilon ='+str(key) +'$ (sparse)'
             
-        ax.plot(data_eigs[::-1,1], linestyle='',marker = markers[j], mfc='none',\
+        ax.plot(data_eigs[::-1,1], linestyle='-',marker = markers[j], mfc='none',\
                     markersize=5,label=my_label)
 
-ax.legend(loc='upper right')
-ax.set_yscale('log')
-plt.xlabel("Mode number $k$", fontsize=24)
-plt.ylabel("$\sigma^\epsilon_k$",fontsize=24)
-plt.savefig( pic_dir+"eigvals.eps", dpi=300, transparent=True, bbox_inches='tight' )
-fig.show()
+    ax.legend(loc='upper right')
+    ax.set_yscale('log')
+    plt.xlabel("Mode number $k$", fontsize=24)
+    plt.ylabel("$\sigma^\epsilon_k$",fontsize=24)
+    plt.savefig( pic_dir+"eigvals.eps", dpi=300, transparent=True, bbox_inches='tight' )
+    fig.show()
