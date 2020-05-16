@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 import wabbit_tools as wt
+import flusi_tools as ft
 ###############################################################################
 # LATEX FONT
 font = {'family' : 'serif',
@@ -29,10 +30,10 @@ rc('text', usetex=True)
 ###############################################################################
 ###############################################################################
 # Specify:
-config_id = "059100"
+config_id = "069300"
 quantity="vorx"
 
-Ne=5 ## offset for l2error 
+Ne=0 ## offset for l2error 
 
 Jmax_dir_list = [ "Jmax"+str(Jmax) for Jmax in Jmax_list]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
@@ -79,7 +80,7 @@ for j, jmax_dir in enumerate(Jmax_dir_list):
     ####  plot compression rate
     ax2.semilogx(eps_list,Nblocks/Nblocksdense,'-o', label = "$J_\mathrm{max}="+str(Jmax_list[j])+'$')
 
-
+# %%
 # Create a legend for the first line.
 l2_legend = ax1.legend(handles=l2plt, loc='lower right',title="$\Vert u(x) - [u(x)]^\epsilon \Vert_2$",fontsize='small')
 ax1.add_artist(l2_legend)

@@ -34,5 +34,5 @@ exponent = np.arange(-5,1)
 Jmax_list = [4,5]
 Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
 
-eps_list = [np.round(val,decimals=-exp) for exp in exponent for val in np.arange(4,7,4)*10.0**(exp)]
+eps_list = [np.round(val,decimals=-exp) for exp in exponent for val in np.arange(1,10,2)*10.0**(exp)]
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]

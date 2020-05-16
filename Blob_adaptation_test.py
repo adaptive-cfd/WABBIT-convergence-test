@@ -25,13 +25,13 @@ dirs= {
 
 # setup for wabbit call
 wabbit_setup = {
-        'mpicommand' : "mpirun -np 4",
+        'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
         'memory'     : "--memory=8GB"
         }
 # parameters to adjust
 class params:
     
-   eps_list  = np.logspace(-8,1,20)    # threshold of adaptation
+   eps_list  = np.logspace(-4,0,10)    # threshold of adaptation
    jmax_list = [4,5,6]        # maximal tree level
     
    class domain:
@@ -39,7 +39,7 @@ class params:
         L = [1.0, 1.0]              # length of domain
   
    #exp(-(x²+y²)/2/sigma²)
-   def init2(x,L):
+   def init(x,L):
        sigma = np.asarray(L)*0.01
        x0    = [Li/2 for Li in L]
        xrel  = [x-x0 for x,x0 in zip(x,x0)]
@@ -49,7 +49,7 @@ class params:
        return field
     
     ## sin(1/x)*sin(1/y)
-   def init(x,L):                             # this function will be initialized on the domain
+   def init1(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
@@ -59,7 +59,7 @@ class params:
         return field     
     
       ## sin(1/x)*sin(1/y)
-   def init(x,L):                             # this function will be initialized on the domain
+   def init2(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
@@ -108,8 +108,8 @@ def wabbit_adapt(dirs, params, wabbit_setup):
             file = work +"/"+fname
             file = wt.dense_to_wabbit_hdf5(phi,file, Bs, params.domain.L,eps*100)
             command = mpicommand + " " +  wdir + \
-                 "wabbit-post --dense-to-sparse --eps=" + str(eps) + " --order=4 " + memory + \
-                  " "+ file + ">adapt.log"
+                 "wabbit-post --dense-to-sparse --eps=" + str(eps) + " --order=CDF40 --eps-norm=Linfty " + memory + \
+                  " --files="+ file + ">adapt.log"
                   # command for densing file again
             dense_command = mpicommand + " " +  wdir + \
                  "wabbit-post --sparse-to-dense " + \

@@ -147,14 +147,14 @@ if not os.path.exists(pic_dir+save_dir):
     os.mkdir(pic_dir+save_dir) # make directory for saving the files
 
 for jmax in Jmax_list:
-    for index,val in enumerate(eps_dir_list):
-        files = glob.glob('Jmax'+str(jmax)+'/'+eps_dir_list[index]+'/'+'/*.h5')
+    for index,val in enumerate(eps_dir_list[:]):
+        files = glob.glob('Jmax'+str(jmax)+'/'+val+'/'+'/*.h5')
         files.sort()
         Nt=len(files)
         Npics=Nt
         for iter,file in enumerate(files[::step]):
             plt_file = file.split("/")[-1]
-            plt_file = plt_file.replace("mode1","mode""-jmax"+str(jmax)+"-"+eps_dir_list[index])
+            plt_file = plt_file.replace("mode1","mode""-jmax"+str(jmax)+"-"+val)
             plt_file = plt_file.replace('.h5','.png')
             plt_file_procs = plt_file.replace("mode","mode-procs")
            
@@ -173,14 +173,14 @@ for jmax in Jmax_list:
             # plot procs
             ###################
             fig, ax = plt.subplots() 
-            ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud', \
-                   caxis=[0,4],block_edge_alpha=1,colorbar_orientation="horizontal", \
-                   gridonly=True,cmap=plt.get_cmap("Accent"),ticks=False,\
-                   colorbar=False,title=False)
-            ax.set_aspect('equal')
-            plt.savefig( pic_dir+save_dir+plt_file_procs, dpi=300, transparent=True, bbox_inches='tight' )
-            plt.close()
-    
+#            ax,cb = wt.plot_wabbit_file(file,dpi=300,shading='gouraud', \
+#                   caxis=[0,4],block_edge_alpha=1,colorbar_orientation="horizontal", \
+#                   gridonly=True,cmap=plt.get_cmap("Accent"),ticks=False,\
+#                   colorbar=False,title=False)
+#            ax.set_aspect('equal')
+#            plt.savefig( pic_dir+save_dir+plt_file_procs, dpi=300, transparent=True, bbox_inches='tight' )
+#            plt.close()
+#    
     
     
 # %% DAEDALUS pics

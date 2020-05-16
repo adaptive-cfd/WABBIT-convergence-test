@@ -29,7 +29,7 @@ rc('text', usetex=True)
 ###############################################################################
 # Specify:
 eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
-mode =0
+mode =15
 ###############################################################################
 # %% get the data
 plt.close("all")
@@ -37,7 +37,7 @@ eigval_list={}
 fig, ax = plt.subplots()
 markers = ['o', '.', 'x', '+', 'v', '^', '<', '>', 's', 'd']
 for i, eps_dir in enumerate(eps_dir_list):
-    file = eps_dir + "/a_coefs.txt"
+    file = 'Jmax4/'+eps_dir + "/a_coefs.txt"
     ########################
     # get data from file
     #######################
