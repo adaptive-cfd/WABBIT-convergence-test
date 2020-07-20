@@ -21,7 +21,8 @@ def adaptation_for_different_eps(h5_fname, wdir, eps_list, memory, mpicommand, c
     import wabbit_tools as wt
     # generate new file names 
     print( "Input data file: ", h5_fname, "\n")
-    file = h5_fname.split("/")[-1]
+    path, file = os.path.split(h5_fname)
+    os.system("cp "+path+"/"+file+ " " + "./"+file)
     filesparse =file.replace('_','-eps_%1.1e_')
     filedense =file.replace('_','-dense_')
     # command for sparsing file
@@ -68,15 +69,15 @@ def adaptation_for_different_eps(h5_fname, wdir, eps_list, memory, mpicommand, c
             break
         
         
-        l2error[i] = wt.wabbit_error_vs_wabbit(file,filedense, norm=2, dim=2)  
+        l2error[i] = wt.wabbit_error_vs_wabbit(path+"/"+file,filedense, norm=2, dim=2)  
         #  l2error[i] = wt.wabbit_error_vs_(fname_ref[0],fname_dense[0], norm=2, dim=2)   
-        linferror[i] = wt.wabbit_error_vs_wabbit(file,filedense, norm=np.inf, dim=2)   
+        linferror[i] = wt.wabbit_error_vs_wabbit(path+"/"+file,filedense, norm=np.inf, dim=2)   
 
         # compute compression
         Nblocks[i]=sum(wt.block_level_distribution_file( fsparse ))
 
         # compute number of dense blokcs
-    Nblocksdense = sum(wt.block_level_distribution_file( file ))
+    Nblocksdense = sum(wt.block_level_distribution_file( path+"/"+file ))
     
     ##############################################################################
     #    Plot
@@ -111,11 +112,11 @@ def adaptation_for_different_eps(h5_fname, wdir, eps_list, memory, mpicommand, c
 
 
 
-h5_fname = 'vorx_000060000000.h5'
-wdir = '/home/phil/develop/WABBIT/'
-eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,14)])
-wabbit_setup = {
-        'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
-        'memory'     : "--memory=16GB"
-        }
-[l2error,sucess]=adaptation_for_different_eps(h5_fname, wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], create_log_file=True)
+# h5_fname = '/home/phil/develop/WPOD/D_WPOD/synth/Jmax6/u_000003882352.h5'
+# wdir = '/home/phil/develop/WABBIT/'
+# eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-12,0,14)])
+# wabbit_setup = {
+#         'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
+#         'memory'     : "--memory=16GB"
+#         }
+# [l2error,sucess]=adaptation_for_different_eps(h5_fname, wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], create_log_file=True)

@@ -1,0 +1,18 @@
+###########################################################
+# wavelet adaptive propper orthogonal decomposition (wPOD)
+###########################################################
+
+# 1. Running scripts:
+  - the main files of this study are contained in:
+    01_synthetic_test_case.py   ... synthetic test case of oscillating bumps
+    02_vortex_street.py         ... von Karmans vortex street at Re=200
+    03_bumblebee.py             ... adaptive calculation of a bumblebee
+  - before you run the scripts make sure that you have set all parameters in
+    wPODdirs.py
+  - a current version of wabbit should be installed on your pc and ready to go
+
+# 2. Theoretical results are contained in the directory theory/. 
+     Here you find calculation of the CDF4,0 coefficients
+     and the computation of the autocorrelation function between two scaling functions.
+
+# 3. All functions and scripts are contained in the package folder wPOD

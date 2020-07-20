@@ -4,5 +4,8 @@ wabbit-post
 *.h5
 *.t
 *.dat
+*.pyc
+*.un~
+*.png
 __pycache__
 return

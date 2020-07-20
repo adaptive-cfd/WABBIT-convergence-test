@@ -10,29 +10,35 @@ PLEASE CHANGE ALL Directories here:
 """
 from os.path import expanduser
 import numpy as np
-home = expanduser("~")
+from matplotlib import rc
+
 ###############################################################################
+# Directories
+###############################################################################
+home = expanduser("~")
 # 1.) Location of images saved during post processing
-pic_dir = "./images/"           
+pic_dir = "./"           
 # 2.) directoy of wabbit-post executable
 #wdir = "/home/krah/develop/WABBIT/"++
 wdir = home+"/develop/WABBIT/"
-# 3.) results to compare data to
-resdir_flusi="../../results/cyl/wPOD/vor_up/"
-resdir_flusi_modes="../results/cyl/vorticity_POD2/modes/"
-# 4.) Where should wabbit-post save its data
-resdir_wPOD_modes=home+"/develop/results/cyl/wPOD/modes/29.08.19/"
-resdir_wabbit =resdir_flusi + "_adapt/"
-# setup for wabbit call
+# 3.) directoy of wabbit-post executable
+work = home+"/develop/WPOD/D_WPOD/"
+
+dirs= {
+       'wabbit' : wdir ,    # directory of wabbit
+       'work'   : work,     # where to save big data files
+       'images' : pic_dir  # pictures are saved here
+       }
+
+
 wabbit_setup = {
-        'mpicommand' : "mpirun -np 4",
+        'mpicommand' : "mpirun --use-hwthread-cpus -np 2",
         'memory'     : "--memory=16GB"
         }
 ###############################################################################
-exponent = np.arange(-5,1)
-
-Jmax_list = [4,5]
-Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
-
-eps_list = [np.round(val,decimals=-exp) for exp in exponent for val in np.arange(1,10,2)*10.0**(exp)]
-eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
+# LATEX FONT
+###############################################################################
+font = {'family' : 'serif',
+        'size'   : 16}
+rc('font',**font)
+rc('text', usetex=True)   

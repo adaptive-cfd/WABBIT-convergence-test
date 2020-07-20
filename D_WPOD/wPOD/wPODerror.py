@@ -30,16 +30,18 @@ rc('text', usetex=True)
 ###############################################################################
 
 # %% get the data
-def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs):
+def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=29):
+     # n_star ... mode number at which delta err= |wPODerr - PODerr|
     plt.close("all")
     pic_dir = dirs["images"]
+    work = dirs["work"]
     eigval_list={}
     fig=[2,2,2]
     ax=[1,1,1]
     markers = ['o', '.', 'x', '+', 'v', '^', '<', '>', 's', 'd']
     files = {}
     data = {}
-    n_star = 29  # mode number at which delta err= |wPODerr - PODerr|
+    
     eps_dir_list=eps_dir_list[::-1]
     eps_list=eps_list[::-1]
     for Jmax, jmax_dir in zip(Jmax_list, Jmax_dir_list):
@@ -52,8 +54,8 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs):
         mlist=[]
         for i, eps_dir in enumerate(eps_dir_list):
             #if np.mod(i,2) == 0: continue
-            files["L2error"] = jmax_dir+eps_dir + "/L2error.txt"
-            files["eigs"] = jmax_dir+eps_dir + "/eigenvalues.txt"
+            files["L2error"] = work+"/"+jmax_dir+eps_dir + "/L2error.txt"
+            files["eigs"] = work+"/"+jmax_dir+eps_dir + "/eigenvalues.txt"
             ########################
             # get data from file
             #######################

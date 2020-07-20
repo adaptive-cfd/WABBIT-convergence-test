@@ -28,14 +28,15 @@ qname      = "vorx"           #name of quantity
 ###############################################################################
 
 # %% run wPOD for different eps:
-def run_wPOD_for_different_eps(wdir, data_lists , eps_list, Jmax, memory, mpicommand, save_log=False):
-
+def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicommand, save_log=False, n_modes=30):
+    # n_modes ... number of modes created in algorithm
     # if multiple datafiles are given, join the files with spaces:
 
-
+    work = dirs["work"]
+    wdir = dirs["wabbit"]
     data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
     nc = len(data_lists)
-    Jmaxdir = "Jmax"+str(Jmax)
+    Jmaxdir = work+"/Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
             os.mkdir(Jmaxdir) # make directory for saving the files
     os.chdir(Jmaxdir)
@@ -46,13 +47,13 @@ def run_wPOD_for_different_eps(wdir, data_lists , eps_list, Jmax, memory, mpicom
         # ------------------------------
         if eps > 0:
             c = mpicommand + " " +  wdir + \
-             "wabbit-post --POD --save_all --nmodes=30 " + memory + \
-             " --adapt=%1.1e"%eps +" --components=" + str(nc) + " --list=" + data
+             "wabbit-post --POD --save_all --nmodes="+str(n_modes)+" " + memory + \
+             " --adapt=%1.1e"%eps +" --components=" + str(nc) + ' --list="' + data+'"'
 
         else:
             c = mpicommand + " " +  wdir + \
-             "wabbit-post --POD --save_all --nmodes=30 " + memory  \
-             + " --components=" + str(nc) + " --list=" + data
+             "wabbit-post --POD --save_all --nmodes="+str(n_modes)+" " + memory  \
+             + " --components=" + str(nc) + ' --list="' + data+'"'
         # pipe output into logfile
         if save_log:
             c += " > wPOD.log"
@@ -86,8 +87,8 @@ def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, 
 
     data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
     command = mpicommand + " " +  wdir + \
-             "wabbit-post --POD-reconstruct a_coefs.txt --nmodes=30 " + \
-             " --adapt=%1.1e --components=1 --list " + data +" "+ memory \
+             "wabbit-post --POD-reconstruct --time_coefficients=a_coefs.txt --nmodes=30 " + \
+             ' --adapt=%1.1e --components=1 --mode-list="' + data +'" '+ memory \
              + " --iteration="+str(iteration)
 
     Jmaxdir = "Jmax"+str(Jmax)
@@ -128,7 +129,7 @@ def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, 
 
 # %% reconstruct for different eps:
 def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
-                iteration, memory, mpicommand):
+                iteration, memory, mpicommand, workdir = "./"):
 
     # in the first step we make a concatenatet string form all elements in the
     # snapshot and mode lists
@@ -138,15 +139,15 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
     n_components = len(data_lists)
     # command executed for every eps
     command = mpicommand + " " \
-             +  wdir + "wabbit-post --POD-error a_coefs.txt "  \
+             +  wdir + "wabbit-post --POD-error --time_coefficients=a_coefs.txt "  \
              + " --adapt=%1.1e --components=" + str(n_components) \
-             + " --snapshot-list " + data \
-             + " --mode-list "     + modes\
-             + " "+ memory \
+             + ' --snapshot-list="' + data \
+             + '" --mode-list="'     + modes\
+             + '" '+ memory \
              + " --iteration=" + str(iteration)
 
     # generate new Jmaxdir if not exist
-    Jmaxdir = "Jmax"+str(Jmax)
+    Jmaxdir = workdir+"/Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
             os.mkdir(Jmaxdir) # make directory for saving the files
     os.chdir(Jmaxdir)
@@ -188,7 +189,7 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
     return success
 
 # %% generate mode list for different eps
-def generate_list_of_name_in_dir( name, directory, save_dir=None ):
+def generate_list_of_name_in_dir( name, directory, save_dir=None, abspath=True ):
     import re
 
     h5file_names = glob.glob(directory+'/'+name+'*.h5')
@@ -217,9 +218,12 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None ):
             # remove the elements of the specific component from the list
             h5file_names.remove(element)
             # write all modes of the component to to file
-            absfilepath = os.path.abspath(element) + '\n'
+            if abspath: 
+                filepath = os.path.abspath(element) + '\n'
+            else:
+                filepath = os.path.relpath(element,'~') + '\n'
             #print(absfilepath)
-            fpointer.write(absfilepath)
+            fpointer.write(filepath)
         fpointer.close()
 
     ## if successfull then:
@@ -285,6 +289,7 @@ def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
 def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, reconstructed_iteration):
 
     wdir = dirs["wabbit"]
+    work = dirs["work"]
     memory = wabbit_setup["memory"]
     mpicommand = wabbit_setup["mpicommand"]
     data_folder = data["folder"]
@@ -300,7 +305,7 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, rec
                 return
 
         success = 0
-        success += run_wPOD_for_different_eps(wdir, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True)
+        success += run_wPOD_for_different_eps(dirs, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True)
         if success!=0:
             print("wPOD did not execute successfully")
             break
@@ -312,7 +317,7 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, rec
             break
 
         success += run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
-                   reconstructed_iteration, memory, mpicommand)
+                   reconstructed_iteration, memory, mpicommand,workdir = work)
         if success!=0:
             print("error estimation did not execute successfully")
             break

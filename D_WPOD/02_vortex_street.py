@@ -4,24 +4,22 @@
 ##############################################
 WAVELET PROPPER ORTHOGONAL DECOMPOSITION
 
-MAIN skript calling all bumblebee routines
+MAIN skript calling all subroutines vortex street
 ##############################################
 """
-from run_wabbit import run_wabbit_POD
+from wPOD.run_wabbit import run_wabbit_POD
 import numpy as np
+from wPOD.wPODerror import *
 ###############################################################################
 ###############################################################################
-# %% directories needed
-dirs= {
-       'wabbit' : "~/develop/WABBIT/" ,         # directory of wabbit
-       'work'   : "./",                         # where to save big data files
-       'images' : "./"                           #pictures are saved here
-       }
-# setup for wabbit call
-wabbit_setup = {
-        'mpicommand' : "mpirun -np 4",
-        'memory'     : "--memory=32GB"
+# directories needed
+dirs["work"]+="/cyl/"
+dirs["images"]+="/cyl/"
+
+data = {"folder" :  "/home/phil/develop/WPOD/D_WPOD/cyl/", # where the data is stored
+        "qname" : ["p"]
         }
+
 ###############################################################################
 ###############################################################################
 # %% In this step we call all necessary wabbit routines
@@ -30,24 +28,25 @@ wabbit_setup = {
 #           * --PODerror 
 #  for the given parameters
 ###############################################################################
+""" 
+ Vortex Street
+"""
 Jmax_list = [6]
-eps_list = [4.0 *1e-2, 8.0e-2, 4.0e-1,0.8]
-Jmax_dir_list = [ "../../WABBIT-convergence-bumblebee//D_WPOD/Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
-eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
+Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
 
-reconstructed_iteration = 7
-data = {"folder" :  "/home/krah/develop/results/bumblebee/",
-        "qname" : ["ux", "uy", "uz", "p"]
-        }
+eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,14)])
+
+eps_dir_list = [ "eps%1.1e" %eps for eps in eps_list]
+
+
 mode_lists = ["mode1_list.txt","mode2_list.txt","mode3_list.txt","mode4_list.txt"]
+reconstructed_iteration =7
 
 run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
 
 
+
 ###############################################################################
-###############################################################################
-# %% In this step we analyze the results
-#  for the given parameters
 ###############################################################################
 # %% 
- plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs)
+delta_err,clist=plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs)

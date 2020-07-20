@@ -58,12 +58,12 @@ class params:
             field *= np.sin(-np.divide(1,np.abs(x)))
         return field     
     
-      ## sin(1/x)*sin(1/y)
-   def init2(x,L):                             # this function will be initialized on the domain
+      ## (x**2+y**2)*heaviside(x)
+   def init(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
-        field = xrel[0]**2+xrel[1]**2
+        field = (xrel[0]**2+xrel[1]**2)*np.heaviside(xrel[0],0)
         return field     
 ###############################################################################
 # %% 
@@ -108,7 +108,7 @@ def wabbit_adapt(dirs, params, wabbit_setup):
             file = work +"/"+fname
             file = wt.dense_to_wabbit_hdf5(phi,file, Bs, params.domain.L,eps*100)
             command = mpicommand + " " +  wdir + \
-                 "wabbit-post --dense-to-sparse --eps=" + str(eps) + " --order=CDF40 --eps-norm=Linfty " + memory + \
+                 "wabbit-post --dense-to-sparse --eps=" + str(eps) + " --order=CDF44 --eps-norm=Linfty " + memory + \
                   " --files="+ file + ">adapt.log"
                   # command for densing file again
             dense_command = mpicommand + " " +  wdir + \
