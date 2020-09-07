@@ -10,6 +10,7 @@ MAIN skript calling all bumblebee routines
 from wPOD.run_wabbit import run_wabbit_POD
 import numpy as np
 from wPOD.wPODerror import *
+from wPODdirs import *
 ###############################################################################
 ###############################################################################
 # %% directories needed
@@ -35,13 +36,13 @@ data = {"folder" :  "/work/krah/bumblebee/POD/",
 Jmax_list = [7]
 Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
 
-eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-2,0,5)])
-eps_dir_list = [ "eps"+str(eps) for eps in eps_list]
+eps_list = np.asarray([float("%1.1e" %eps) for eps in np.logspace(-2,0,5)])
+eps_dir_list = [ "eps%1.1e"%(eps) for eps in eps_list]
 
 reconstructed_iteration = 7
 mode_lists = ["mode1_list.txt","mode2_list.txt","mode3_list.txt","mode4_list.txt"]
 
-run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
+#run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
 
 ###############################################################################
 ###############################################################################
@@ -49,4 +50,4 @@ run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, recons
 #  for the given parameters
 ###############################################################################
 # %% 
-plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs)
+plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, eps_list_plot=np.delete(eps_list,[1,2]),show_legend=True, alternate_markers=True)

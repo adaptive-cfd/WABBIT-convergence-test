@@ -11,11 +11,12 @@ from numpy import sqrt
 import matplotlib.pyplot as plt
 import pywt
 from matplotlib import rc
+
 font = {'family' : 'serif',
         'size'   : 18}
 rc('font',**font)
 rc('text', usetex=True) 
-
+pic_dir = '/home/phil/paper/01_paper/01_wPOD/figures'
 
 def shift(arr, num, fill_value=np.nan):
     result = np.empty_like(arr)
@@ -36,10 +37,10 @@ htilde= np.asarray([ 0, 0, 0, 1, 0, 0, 0, 0])/sqrt(2)
 gtilde= np.asarray([ 0, -1/16, 0, 9/16, 1, 9/16,0, -1/16])/sqrt(2)
 g= np.asarray([ 0, 0, 0, 0, 1, 0, 0, 0])/sqrt(2)
 
-h= np.asarray([0, 1/2, 1,1/2 ,0])/sqrt(2)
-htilde= np.asarray([0,  0, 1, 0, 0])/sqrt(2)
-gtilde= np.asarray([0, 1/2, 1,1/2, 0])/sqrt(2)
-g= np.asarray([0, 0, 1, 0, 0])/sqrt(2)
+# h= np.asarray([0, 1/2, 1,1/2 ,0])/sqrt(2)
+# htilde= np.asarray([0,  0, 1, 0, 0])/sqrt(2)
+# gtilde= np.asarray([0, 1/2, 1,1/2, 0])/sqrt(2)
+# g= np.asarray([0, 0, 1, 0, 0])/sqrt(2)
 
 
 my_filter_bank = (htilde, h,  gtilde, g)
@@ -77,15 +78,16 @@ plt.plot(x,phi,'-b')
 plt.plot(x+1,phi,'--g')
 
 plt.plot(taus,a,':k')
-plt.text(1,-0.18,"$y$")
+plt.text(1.1,1/3,"$k=1$")
 plt.xlabel("$x$")
-plt.xticks(np.arange(-4,5,1))
-plt.axvline(x=1, c = 'k')
+plt.xticks(np.arange(-6,6,1))
+plt.plot(-np.asarray(tau_list),M_list,'ro')
+plt.axvline(x=1, c = 'k',linestyle="--")
 plt.xlim([min(x)+1,max(x)])
 plt.plot(tau_list,M_list,'ro')
-plt.plot(-np.asarray(tau_list),M_list,'ro')
-plt.legend(["$\phi(x)$","$\phi(x-y)$","$(\phi*\phi)(x)$"],loc='upper left')
+plt.legend(["$\phi(x)$","$\phi(x-k)$","$(\phi*\phi)(x)$", "$w_k$"],loc='upper left',frameon=False)
 plt.show()
+plt.savefig(pic_dir+"/weightsDD4.eps", dpi=300, transparent=True, bbox_inches='tight' )
 #plt.grid("on")
 
 

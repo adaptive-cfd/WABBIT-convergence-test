@@ -34,26 +34,6 @@ resdir="/home/phil/devel/results/cyl_POD/"
 fc = farge_colormaps.farge_colormap_multi( taille=600,limite_faible_fort=0.2, etalement_du_zero=0.04, type='vorticity' )
 
 
-
-
-
-# %% Plot flusi original files:
-files = glob.glob(resdir+'wPOD/reconstruct/*1.h5')
-files.sort()
-
-fig = plt.figure()
-Nxcut = [50, 206]
-Nycut = [128, 128]
-Nt = len(files)
-Npics = 2
-iter=0
-step=1#Nt//Npics
-for iter,file in enumerate(files[::step]):
-        flusi.crop_flusi_HDF5(file,Nxcut,Nycut)
-
-# %% convert and adapt
-#wt.command_on_each_hdf5_file("/home/phil/devel/results/cyl_POD/wPOD/reconstruct/",\
-#                            "/home/phil/devel/WABBIT/wabbit-post --dense-to-sparse --eps=0.1 %s")
 # %% Plot flusi original files:        
 index = 4
 files = glob.glob(eps_dir_list[index]+'/reconst*.h5')

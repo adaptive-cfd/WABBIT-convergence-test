@@ -31,4 +31,4 @@ def rSVD(X,r,q,p):
     UY, S, VT = np.linalg.svd(Y, full_matrices = 0)
     U = Q @ UY
     
-    return U,S,VT
+    return U,S,VT,np.size(Z)

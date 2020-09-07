@@ -11,13 +11,13 @@ PLEASE CHANGE ALL Directories here:
 from os.path import expanduser
 import numpy as np
 from matplotlib import rc
-
+import matplotlib.pyplot as plt
 ###############################################################################
 # Directories
 ###############################################################################
 home = expanduser("~")
 # 1.) Location of images saved during post processing
-pic_dir = "./"           
+pic_dir = "./images"           
 # 2.) directoy of wabbit-post executable
 #wdir = "/home/krah/develop/WABBIT/"++
 wdir = home+"/develop/WABBIT/"
@@ -32,13 +32,13 @@ dirs= {
 
 
 wabbit_setup = {
-        'mpicommand' : "mpirun --use-hwthread-cpus -np 2",
-        'memory'     : "--memory=16GB"
+        'mpicommand' : "mpirun -np 2",
+        'memory'     : "--memory=80GB"
         }
 ###############################################################################
 # LATEX FONT
 ###############################################################################
 font = {'family' : 'serif',
-        'size'   : 16}
+        'size'   : 18}
 rc('font',**font)
 rc('text', usetex=True)   

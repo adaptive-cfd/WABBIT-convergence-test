@@ -17,15 +17,6 @@ import glob
 import numpy as np
 from wPODdirs import *
 ###############################################################################
-# %% Change parameters here:
-###############################################################################
-# datafolder you want to use for POD
-data_folder = home + "/home/phil/develop/results/Jmax4"
-data_lists = [data_folder+"/vorx1_list.txt"]
-mode_lists = ["mode1_list.txt"]
-reconstructed_iteration=5
-qname      = "vorx"           #name of quantity
-###############################################################################
 
 # %% run wPOD for different eps:
 def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicommand, save_log=False, n_modes=30):
@@ -38,7 +29,7 @@ def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicom
     nc = len(data_lists)
     Jmaxdir = work+"/Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
-            os.mkdir(Jmaxdir) # make directory for saving the files
+            os.makedirs(Jmaxdir, exist_ok=True) # make directory for saving the files
     os.chdir(Jmaxdir)
 
     for eps in eps_list:
@@ -82,16 +73,16 @@ def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicom
     return success
 
 # %% reconstruct for different eps:
-def run_wPOD_reconstruction_for_different_eps(wdir, data_lists, eps_list, Jmax, \
-                                              iteration, memory, mpicommand):
+def run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
+                                              iteration, memory, mpicommand, workdir = "./"):
 
-    data = " ".join(str(data_lists[i]) for i in range(len(data_lists)))
+    data = " ".join(str(mode_lists[i]) for i in range(len(mode_lists)))
     command = mpicommand + " " +  wdir + \
              "wabbit-post --POD-reconstruct --time_coefficients=a_coefs.txt --nmodes=30 " + \
              ' --adapt=%1.1e --components=1 --mode-list="' + data +'" '+ memory \
              + " --iteration="+str(iteration)
 
-    Jmaxdir = "Jmax"+str(Jmax)
+    Jmaxdir = workdir+"/Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
             os.mkdir(Jmaxdir) # make directory for saving the files
     os.chdir(Jmaxdir)
@@ -282,11 +273,27 @@ def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
             break
     return success
 
+# %% adapt one snapshot for different eps: logfile written in adapt .log
+    
 
+
+def compute_vorticity(wdir, uxfile, uyfile, memory, mpicommand):
+
+    # command for sparsing file
+    command = mpicommand + " " +  wdir + \
+             "wabbit-post --vorticity "+ uxfile + " " + uyfile + " 2" 
+
+    print("\n", command,"\n\n")
+    success = os.system(command)   # execute command
+    
+    if success != 0:
+        print("command did not execute successfully")
+
+    return success
 
 # %% run scripts:
 
-def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, reconstructed_iteration):
+def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration, n_modes=30):
 
     wdir = dirs["wabbit"]
     work = dirs["work"]
@@ -305,13 +312,13 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_list, rec
                 return
 
         success = 0
-        success += run_wPOD_for_different_eps(dirs, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True)
+        #success += run_wPOD_for_different_eps(dirs, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True, n_modes=n_modes)
         if success!=0:
             print("wPOD did not execute successfully")
             break
 
         #success += run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
-        #                                     reconstructed_iteration, memory, mpicommand)
+        #                                     reconstructed_iteration, memory, mpicommand, workdir = work)
         if success!=0:
             print("wPOD reconstruction did not execute successfully")
             break

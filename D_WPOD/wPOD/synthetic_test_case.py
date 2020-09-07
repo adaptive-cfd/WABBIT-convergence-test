@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import random
 from wPOD.run_wabbit import *
 from wPOD.wPODerror import *
-from wPOD.adaption_test import adaptation_for_different_eps
+from wPOD.adaption_test import adapt2eps
 import wabbit_tools as wt
 import matplotlib.pyplot as plt
 import re
@@ -58,26 +58,19 @@ def init(x,t,L, case="Mendez", slow_decay=True):
            freq_list = np.arange(0,len(x0_list)+1)
            random.shuffle(freq_list)
            if slow_decay:
-               amp = [np.exp(-k/100)*np.sin(np.pi*k*t)/np.sqrt(np.pi) for k in freq_list]
+               amp = [np.exp(-k/100)*np.sin(np.pi*k*t) for k in freq_list]
            else:
                amp = [np.exp(-k/4)*np.sin(np.pi*k*t)/np.sqrt(np.pi) for k in freq_list]
                
-               
-        
+                
        for i, x in enumerate(xrel_list):
            radius = np.sqrt(x[0]**2 + x[1]**2)
            phi_vec =np.reshape(fun(radius),[-1])           
            temp = np.outer(phi_vec,amp[i])
-           #norm = np.linalg.norm(temp,ord=2)
-           #temp *= 1/norm
-            
-           #amp[i] *=1/norm
-            
-            # plot temporal amplitude
-#           ax.plot(t,amp[i],label="$a_{"+str(i+1)+"}(\mu)$")
+           
             
            ufield += temp
-     
+        
        # ax.legend(loc='upper left')
        # ax.spines['top'].set_visible(False)
        # ax.spines['right'].set_visible(False)
@@ -90,11 +83,11 @@ def init(x,t,L, case="Mendez", slow_decay=True):
        u = np.reshape(ufield,[*N,Nt])
        plt.pcolormesh(u[...,Nt//2])
        
-       plt.figure(11)
-       [U,S,V]= np.linalg.svd(ufield,0)
-       plt.semilogy(S,'*')
-       plt.xlabel("$n$")
-       plt.ylabel("$\sigma_n$")
+       # plt.figure(11)
+       # [U,S,V]= np.linalg.svd(ufield,0)
+       # plt.semilogy(S,'*')
+       # plt.xlabel("$n$")
+       # plt.ylabel("$\sigma_n$")
        return ufield, amp
    
 
@@ -135,11 +128,6 @@ def synthetic_test_case(dirs, params, wabbit_setup):
     
     folder = os.path.split(os.path.split(file_ref)[0])[0]
 
-    
-    data = {"folder" :  folder,
-        "qname" : [qname]
-        }
-    mode_lists = ["mode1_list.txt"]
-    run_wabbit_POD(wabbit_setup, dirs, data, params.jmax_list, params.eps_list, mode_lists, reconstructed_iteration=10)
+
     
     return file_list
