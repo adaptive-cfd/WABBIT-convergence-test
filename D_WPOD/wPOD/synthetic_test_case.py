@@ -60,7 +60,7 @@ def init(x,t,L, case="Mendez", slow_decay=True):
            if slow_decay:
                amp = [np.exp(-k/100)*np.sin(np.pi*k*t) for k in freq_list]
            else:
-               amp = [np.exp(-k/4)*np.sin(np.pi*k*t)/np.sqrt(np.pi) for k in freq_list]
+               amp = [np.exp(-k/3)*np.sin(np.pi*k*t) for k in freq_list]
                
                 
        for i, x in enumerate(xrel_list):

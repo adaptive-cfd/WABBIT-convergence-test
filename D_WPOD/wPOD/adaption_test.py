@@ -13,7 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # %% adapt one snapshot for different eps: logfile written in adapt .log
-def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty", wavelets="CDF40", create_log_file=True, show_plot=True):
+def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty", wavelets="CDF40", create_log_file=True, show_plot=True,pic_dir="./"):
     
     import re
     import os
@@ -103,15 +103,15 @@ def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty"
         fig2, ax2 = plt.subplots() 
         Ne = 0
         l2plt, = ax1.loglog(eps_list[Ne:],l2error[Ne:],'-o',label="$\Vert u(x) - [u(x)]^\epsilon \Vert_2$")
-        linfplt, = ax1.loglog(eps_list[Ne:],linferror[Ne:],'-.*', label= "$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$")
-        ax1.legend()
+        #linfplt, = ax1.loglog(eps_list[Ne:],linferror[Ne:],'-.*', label= "$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$")
         ####  plot compression rate
         ax2.semilogx(eps_list,Nblocks/Nblocksdense,'-o')
         # Create a legend for the first line.
-        ax1.loglog(eps_list,eps_list, 'k--')
+        ax1.loglog(eps_list,eps_list, 'k--',label=r"$\epsilon$")
         ax1.grid(which='both',linestyle=':')
         ax1.set_xlabel("$\epsilon$")
         ax1.set_ylabel("relative error")
+        ax1.legend()
         
         #ax2.legend()
         ax2.grid(which='both',linestyle=':')
@@ -138,6 +138,12 @@ def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty"
         fig2.savefig( 'compression_rate.png', dpi=300, transparent=True, bbox_inches='tight' )
     
         fig3.savefig( 'compression_err_vs_rate.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+        
+        
+        fig1.savefig(pic_dir+ 'compression_err4th.svg', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+        fig2.savefig(pic_dir+ 'compression_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
+        fig3.savefig(pic_dir+ 'compression_err_vs_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
+
     return l2error, linferror, Nblocks, Nblocksdense
 
 

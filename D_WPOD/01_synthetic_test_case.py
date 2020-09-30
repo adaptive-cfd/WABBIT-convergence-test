@@ -17,7 +17,7 @@ from wPOD.run_wabbit import *
 import wabbit_tools as wt
 import time
 font = {'family' : 'serif',
-        'size'   : 18}
+        'size'   : 20}
 rc('font',**font)
 rc('text', usetex=True)   
 
@@ -26,10 +26,13 @@ rc('text', usetex=True)
 ############################################################################### 
 class params:
    case = "Bumbs" # choose [Bumbs,Mendez] 
-   slow_singular_value_decay=True
+   wavelets_norm = "L2"
+   wavelets = "CDF44"
+   slow_singular_value_decay=False
    #eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-12,0,6)])  # threshold of adaptation
-   eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])  # threshold of adaptation
-   jmax_list = [4, 5]        # maximal tree level
+   eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)]) # threshold of adaptation
+  # eps_list =np.delete(eps_list,[6,5,10,11])
+   jmax_list = [4,5,6]        # maximal tree level
    Nt= 2**7
    target_rank = 30
    
@@ -39,13 +42,13 @@ class params:
   
 ###############################################################################
 # directories needed
-dir_list=dirs       
+dir_list=dirs.copy()     
 if params.slow_singular_value_decay:
-    dir_list["work"]=dirs["work"]+"/bump/01/"
-    dir_list["images"]=dirs["images"]+"/bump/01/"
+    dir_list["work"]=dirs["work"]+"/bump/CDF44a/01/"
+    dir_list["images"]=dirs["images"]+"/bump/CDF44a/01/"
 else:
-    dir_list["work"]=dirs["work"]+"/bump/bump/"
-    dir_list["images"]=dirs["images"]+"/bump/bump/"
+    dir_list["work"]=dirs["work"]+"/bump/CDF44a/02/"
+    dir_list["images"]=dirs["images"]+"/bump/CDF44a/02/"
 
 os.makedirs(dir_list["images"], exist_ok=True)
 os.makedirs(dir_list["work"], exist_ok=True)
@@ -62,64 +65,76 @@ data = {"folder" :   dir_list["work"],
         "qname" : ["u"]
         }
 mode_lists = ["mode1_list.txt"]
-#run_wabbit_POD(wabbit_setup, dirs, data, params.jmax_list, params.eps_list, mode_lists, reconstructed_iteration=10,n_modes=params.target_rank)
+# run_wabbit_POD(wabbit_setup, dir_list, data, params.jmax_list, params.eps_list, mode_lists,\
+#                reconstructed_iteration=10,n_modes=params.target_rank,  wavelets=params.wavelets)
+exit
 # %%
 
-delta_err,clist=plot_wPODerror(params.jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dir_list, n_star=30)
+delta_err,clist=plot_wPODerror(params.jmax_list, Jmax_dir_list,eps_dir_list, \
+                                eps_list, dir_list, n_star=30,eps_list_plot=eps_list,\
+                                show_legend=False, show_title=False, alternate_markers=True)
 
 # %% Adaption test 
 wdir = dir_list["wabbit"]
 fig_adapt = [plt.figure(38),plt.figure(39), plt.figure(37)]
 ax_adapt = [fig.add_subplot() for fig in fig_adapt]
-eps_list_  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])  # thre
-for jmax in params.jmax_list:
+eps_list_  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-15,1,20)])  # thre
+for k,jmax in enumerate(params.jmax_list):
+    markers = ['o', 'x', '<', 'v', '^', '+', '>', 's', 'd']
     h5_fname = sorted(glob.glob(dir_list["work"]+"Jmax%d"%jmax+'/*.h5'))[-1]
     [l2error, linferror, Nblocks, Nblocksdense]=adapt2eps(h5_fname, \
     wdir, eps_list_, wabbit_setup['memory'], '', \
-    normalization = 'Linfty',create_log_file=False, show_plot=False)
+    normalization = params.wavelets_norm,create_log_file=True, show_plot=False,
+    wavelets=params.wavelets)
     Ne = 1
     print("Number of blocks Jmax=%d : "%jmax, Nblocks)
+    nm = np.mod(k,np.size(markers))
     #### plot compression error
-    ax_adapt[0].loglog(eps_list_[Ne:],l2error[Ne:],'-o',label="$J_{\\mathrm{max}}=%d$"%jmax)
+    ax_adapt[0].loglog(eps_list_[Ne:],l2error[Ne:],linestyle='-',marker = markers[nm],label="$J_{\\mathrm{max}}=%d$"%jmax)
     #linfplt, = ax_adapt[0].loglog(eps_list[Ne:],linferror[Ne:],'-.*', label= "$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$")
     ####  plot compression rate
-    ax_adapt[1].semilogx(eps_list_[Ne:],Nblocks[Ne:]/Nblocksdense,'-o',label="$J_{\\mathrm{max}}=%d$"%jmax)
-    ax_adapt[2].semilogy(Nblocks[Ne:]/Nblocksdense, l2error[Ne:],'-o',label="$J_{\\mathrm{max}}=%d$"%jmax)
+    ax_adapt[1].semilogx(eps_list_[Ne:],Nblocks[Ne:]/Nblocksdense, \
+            linestyle='-',marker = markers[nm],label="$J_{\\mathrm{max}}=%d$"%jmax)
+    ax_adapt[2].semilogy(Nblocks[Ne:]/Nblocksdense, l2error[Ne:], \
+            linestyle='-',marker = markers[nm],label="$J_{\\mathrm{max}}=%d$"%jmax)
 
 
 # Create a legend for the first line.
 ax_adapt[0].loglog(eps_list_,eps_list_, 'k--',label="$\epsilon$")
 ax_adapt[0].grid(which='both',linestyle=':')
-ax_adapt[0].set_xlabel("$\epsilon$")
-ax_adapt[0].set_ylabel("relative compression error $\\mathcal{E}_{\\mathrm{wavelet}}(\epsilon)$")
+ax_adapt[0].set_xlabel("$\epsilon$", fontsize=25)
+ax_adapt[0].set_ylabel("$\\mathcal{E}_{\\mathrm{wavelet}}$", fontsize=25)
 
 ax_adapt[1].grid(which='both',linestyle=':')
-ax_adapt[1].set_xlabel("$\epsilon$")
-ax_adapt[1].set_ylabel("Compression Factor $C_{\mathrm{f}}$")
+ax_adapt[1].set_xlabel("$\epsilon$", fontsize=25)
+ax_adapt[1].set_ylabel("Compression Factor $C_{\mathrm{f}}$", fontsize=25)
 ax_adapt[0].set_xlim=ax_adapt[1].get_xlim()
 
 ax_adapt[2].legend()
 ax_adapt[2].grid(which='both',linestyle=':')
-ax_adapt[2].set_ylabel("$\\mathcal{E}_{\\mathrm{wavelet}}$")
-ax_adapt[2].set_xlabel("Compression Factor $C_{\mathrm{f}}$")
+ax_adapt[2].set_ylabel("$\\mathcal{E}_{\\mathrm{wavelet}}$", fontsize=25)
+ax_adapt[2].set_xlabel("Compression Factor $C_{\mathrm{f}}$", fontsize=25)
 
 ax_adapt[0].legend()
 ax_adapt[1].legend()
 ax_adapt[2].legend()
 
-fig_adapt[0].savefig(dir_list["images"]+ 'compression_err4th.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+fig_adapt[0].savefig(dir_list["images"]+ 'compression_err4th.svg', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+fig_adapt[1].savefig(dir_list["images"]+ 'compression_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
+fig_adapt[2].savefig(dir_list["images"]+ 'compression_err_vs_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
 
-fig_adapt[1].savefig(dir_list["images"]+ 'compression_rate.png', dpi=300, transparent=True, bbox_inches='tight' )  
+fig_adapt[0].savefig(dir_list["images"]+ 'compression_err4th.pdf', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+fig_adapt[1].savefig(dir_list["images"]+ 'compression_rate.pdf', dpi=300, transparent=True, bbox_inches='tight' )  
+fig_adapt[2].savefig(dir_list["images"]+ 'compression_err_vs_rate.pdf', dpi=300, transparent=True, bbox_inches='tight' )  
 
-fig_adapt[2].savefig(dir_list["images"]+ 'compression_err_vs_rate.png', dpi=300, transparent=True, bbox_inches='tight' )  
     
 # %% Plot some modes
 
 plt.close("all")
 quantity="mode1"
-i = 3 
+i = 4 
 eps_dir = eps_dir_list[i]
-Jmax_dir = Jmax_dir_list[-2]
+Jmax_dir = Jmax_dir_list[-1]
 files = glob.glob(dir_list["work"]+Jmax_dir+eps_dir+'/'+quantity+'_*.h5')
 files.sort()
 acoef_file = dir_list["work"]+Jmax_dir+eps_dir+"/a_coefs.txt"

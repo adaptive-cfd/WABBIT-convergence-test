@@ -46,7 +46,7 @@ def plot_modes(files,acoef_file,quantity,quantity_replace,pic_dir="./",fc=fc_def
         gs1 = gs.GridSpec(nrows=6,ncols=2)
         ax1 = plt.subplot(gs1[:5,0])
         ax,cb,hplot = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=600, \
-                                    shading='gouraud', \
+                                    shading='flat', \
                                     block_edge_alpha=0.1, \
                                     title=False, ticks=False, colorbar=False, fig=fig, ax=ax1)     
         

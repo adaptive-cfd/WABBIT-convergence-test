@@ -30,7 +30,7 @@ dir_list["work"]=dirs["work"] +"/cyl/"
 dir_list["images"]= dirs["images"] + "/cyl/"
 dir_list["wabbit"]= wdir
 
-data = {"folder" :  home+"/develop/results/cyl_new/ACM_cylinder_equi/", # where the data is stored
+data = {"folder" :  home+"/develop/results/20200908_cylinder/", # where the data is stored
         "qname" : ["ux", "uy", "p"]
         }
 
@@ -47,9 +47,8 @@ data = {"folder" :  home+"/develop/results/cyl_new/ACM_cylinder_equi/", # where 
 """
 Jmax_list = [6]
 Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
-eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])
-eps_list = np.delete(eps_list,2)
-#eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-7,0,10)])
+#eps_list = np.asarray([0.0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])
+eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-8,0,10)])
 eps_dir_list = [ "eps%1.1e" %eps for eps in eps_list]
 
 
@@ -57,10 +56,10 @@ mode_lists = ["mode1_list.txt","mode2_list.txt","mode3_list.txt","mode4_list.txt
 reconstructed_iteration =7
 
 # %%
-#run_wabbit_POD(wabbit_setup, dir_list, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
+run_wabbit_POD(wabbit_setup, dir_list, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
 
 
-
+exit
 ###############################################################################
 ###############################################################################
 # %% 
@@ -72,8 +71,8 @@ fig_adapt = [plt.figure(41)]
 ax_adapt = [fig.add_subplot() for fig in fig_adapt]
 h5_fname = [sorted(glob.glob(data["folder"]+'/Jmax6/'+qty+'*.h5'))[100] for qty in data["qname"]]
 [l2error, linferror, Nblocks, Nblocksdense]=adapt2eps(h5_fname, \
-wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], wavelets="CDF40",\
-normalization = "L2",create_log_file=True, show_plot=True)
+wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], wavelets="CDF44",\
+normalization = "L2",create_log_file=True, show_plot=True, pic_dir=dir_list["images"])
 
 # %% get the data
 # COLORMAP:
@@ -93,7 +92,7 @@ for i, eps in enumerate(eps_list[::2]):
                                  shading='flat', caxis=[-6,6], \
                                  block_edge_alpha=0.1,colorbar_orientation="horizontal", \
                                  title=False, ticks=False, colorbar=False, fig=fig, ax=axes.flat[i])
-    at = AnchoredText("$\\epsilon= "+sci_notation(eps,1)+'$',
+    at = AnchoredText("$\\epsilon= $"+sci_notation(eps,1)+'',
                   prop=dict(size=9), frameon=True,
                   loc='upper right',
                   )

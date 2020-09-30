@@ -16,7 +16,7 @@ font = {'family' : 'serif',
         'size'   : 18}
 rc('font',**font)
 rc('text', usetex=True) 
-pic_dir = '/home/phil/paper/01_paper/01_wPOD/figures'
+pic_dir = '/home/krah/develop/WPOD/D_WPOD/images/'
 
 def shift(arr, num, fill_value=np.nan):
     result = np.empty_like(arr)
@@ -36,12 +36,12 @@ h= np.asarray([ -1/16, 0, 9/16, 1, 9/16,0, -1/16, 0])/sqrt(2)
 htilde= np.asarray([ 0, 0, 0, 1, 0, 0, 0, 0])/sqrt(2)
 gtilde= np.asarray([ 0, -1/16, 0, 9/16, 1, 9/16,0, -1/16])/sqrt(2)
 g= np.asarray([ 0, 0, 0, 0, 1, 0, 0, 0])/sqrt(2)
-
-# h= np.asarray([0, 1/2, 1,1/2 ,0])/sqrt(2)
-# htilde= np.asarray([0,  0, 1, 0, 0])/sqrt(2)
-# gtilde= np.asarray([0, 1/2, 1,1/2, 0])/sqrt(2)
-# g= np.asarray([0, 0, 1, 0, 0])/sqrt(2)
-
+#
+#h= np.asarray([0, 1/2, 1,1/2 ,0])/sqrt(2)
+#htilde= np.asarray([0,  0, 1, 0, 0])/sqrt(2)
+#gtilde= np.asarray([0, 1/2, 1,1/2, 0])/sqrt(2)
+#g= np.asarray([0, 0, 1, 0, 0])/sqrt(2)
+#
 
 my_filter_bank = (htilde, h,  gtilde, g)
 wavelet = pywt.Wavelet('My Haar Wavelet', filter_bank=my_filter_bank)
@@ -85,32 +85,34 @@ plt.plot(-np.asarray(tau_list),M_list,'ro')
 plt.axvline(x=1, c = 'k',linestyle="--")
 plt.xlim([min(x)+1,max(x)])
 plt.plot(tau_list,M_list,'ro')
-plt.legend(["$\phi(x)$","$\phi(x-k)$","$(\phi*\phi)(x)$", "$w_k$"],loc='upper left',frameon=False)
+#plt.legend([r"$\varphi(x)$",r"$\varphi(x-k)$",r"$(\varphi*\varphi)(x)$", "$w_k$"],loc='upper right',frameon=False)
+plt.legend([r"$\varphi(x)$",r"$\varphi(x-k)$",r"$(\varphi*\varphi)(x)$", "$w_k$"],loc='upper left',frameon=False)
+
 plt.show()
-plt.savefig(pic_dir+"/weightsDD4.eps", dpi=300, transparent=True, bbox_inches='tight' )
+plt.savefig(pic_dir+"/weightsDD4.svg", dpi=300, transparent=True, bbox_inches='tight' )
 #plt.grid("on")
 
 
 exit
 
 
-    
-  
-fig=plt.figure(100)
-ax = fig.subplots()
-
-for i in range(0,2*len(x),20):
-    plt.gca().cla() 
-    ax.plot(x,phi,'-b')
-    ax.set_xlim(-4,4)
-    phi_shift = shift(phi,i-len(x),0)
-    ax.plot(x,phi_shift,'--g')
-    ax.axvline(x=taus[i],c='k')
-    ax.text(taus[i],-0.18,"$\\tau$")
-    ax.plot(taus[:i],a[:i],'k:')
-    plt.xlabel("$x$")
-    ax.legend(["$\phi(x)$","$\phi(x-\\tau)$","$(\phi*\phi)(x)$"],loc='upper left')
-    fig.canvas.draw()
-    plt.pause(0.0001)
-    
-plt.show()
+# %% 
+#  
+#fig=plt.figure(100)
+#ax = fig.subplots()
+#
+#for i in range(0,2*len(x),20):
+#    plt.gca().cla() 
+#    ax.plot(x,phi,'-b')
+#    ax.set_xlim(-4,4)
+#    phi_shift = shift(phi,i-len(x),0)
+#    ax.plot(x,phi_shift,'--g')
+#    ax.axvline(x=taus[i],c='k')
+#    ax.text(taus[i],-0.18,"$\\tau$")
+#    ax.plot(taus[:i],a[:i],'k:')
+#    plt.xlabel("$x$")
+#    ax.legend([r"$\varphi(x)$",r"$\varphi(x-\\tau)$",r"$(\varphi*\varphi)(x)$"],loc='upper left')
+#    fig.canvas.draw()
+#    plt.pause(0.0001)
+#    
+#plt.show()

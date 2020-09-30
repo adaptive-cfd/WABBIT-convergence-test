@@ -19,7 +19,9 @@ from wPODdirs import *
 ###############################################################################
 
 # %% run wPOD for different eps:
-def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicommand, save_log=False, n_modes=30):
+def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, \
+                               mpicommand, save_log=False, n_modes=30, wavelets="CDF40",\
+                                normalization="L2"):
     # n_modes ... number of modes created in algorithm
     # if multiple datafiles are given, join the files with spaces:
 
@@ -38,13 +40,15 @@ def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicom
         # ------------------------------
         if eps > 0:
             c = mpicommand + " " +  wdir + \
-             "wabbit-post --POD --save_all --nmodes="+str(n_modes)+" " + memory + \
-             " --adapt=%1.1e"%eps +" --components=" + str(nc) + ' --list="' + data+'"'
+             "wabbit-post --POD --save_all --nmodes="+str(n_modes)+" " + memory \
+             + " --adapt=%1.1e"%eps +" --components=" + str(nc) + ' --list="' + data + '"' \
+             + " --order="+wavelets + " --eps-norm="+ normalization
 
         else:
             c = mpicommand + " " +  wdir + \
              "wabbit-post --POD --save_all --nmodes="+str(n_modes)+" " + memory  \
-             + " --components=" + str(nc) + ' --list="' + data+'"'
+             + " --components=" + str(nc) + ' --list="' + data+'"'\
+             + " --order="+wavelets + " --eps-norm="+ normalization
         # pipe output into logfile
         if save_log:
             c += " > wPOD.log"
@@ -74,13 +78,15 @@ def run_wPOD_for_different_eps(dirs, data_lists , eps_list, Jmax, memory, mpicom
 
 # %% reconstruct for different eps:
 def run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, \
-                                              iteration, memory, mpicommand, workdir = "./"):
+                                              iteration, memory, mpicommand, \
+                                            workdir = "./",  wavelets="CDF40",\
+                                            normalization="L2"):
 
     data = " ".join(str(mode_lists[i]) for i in range(len(mode_lists)))
     command = mpicommand + " " +  wdir + \
              "wabbit-post --POD-reconstruct --time_coefficients=a_coefs.txt --nmodes=30 " + \
              ' --adapt=%1.1e --components=1 --mode-list="' + data +'" '+ memory \
-             + " --iteration="+str(iteration)
+             + " --iteration="+str(iteration) + " --order="+wavelets + " --eps-norm="+ normalization
 
     Jmaxdir = workdir+"/Jmax"+str(Jmax)
     if not os.path.exists(Jmaxdir):
@@ -120,7 +126,8 @@ def run_wPOD_reconstruction_for_different_eps(wdir, mode_lists, eps_list, Jmax, 
 
 # %% reconstruct for different eps:
 def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
-                iteration, memory, mpicommand, workdir = "./"):
+                iteration, memory, mpicommand, workdir = "./", wavelets="CDF40",\
+                                normalization="L2"):
 
     # in the first step we make a concatenatet string form all elements in the
     # snapshot and mode lists
@@ -135,7 +142,8 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
              + ' --snapshot-list="' + data \
              + '" --mode-list="'     + modes\
              + '" '+ memory \
-             + " --iteration=" + str(iteration)
+             + " --iteration=" + str(iteration) \
+             + " --order="+wavelets + " --eps-norm="+ normalization
 
     # generate new Jmaxdir if not exist
     Jmaxdir = workdir+"/Jmax"+str(Jmax)
@@ -157,7 +165,7 @@ def run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax 
         os.chdir(save_dir)
 
         # generate lists of POD modes needed for reconstruction
-        success=generate_list_of_name_in_dir( 'mode',  '.' )
+        success=generate_list_of_name_in_dir( 'mode',  '.', abspath=False)
         if not success:
             print('no mode lists generated for eps=', eps)
             break
@@ -212,7 +220,7 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None, abspath=True )
             if abspath: 
                 filepath = os.path.abspath(element) + '\n'
             else:
-                filepath = os.path.relpath(element,'~') + '\n'
+                filepath = os.path.relpath(element,'.') + '\n'
             #print(absfilepath)
             fpointer.write(filepath)
         fpointer.close()
@@ -221,7 +229,9 @@ def generate_list_of_name_in_dir( name, directory, save_dir=None, abspath=True )
     return n_component>0,fname_list
 
 # %% adapt one snapshot for different eps: logfile written in adapt .log
-def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpicommand, create_log_file=True):
+def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, \
+                                 mpicommand, create_log_file=True,  wavelets="CDF40",\
+                                normalization="L2"):
 
     # generate new file names
     h5_fname =  glob.glob(data_folder+'/Jmax'+str(Jmax)+'/*.h5')[11]
@@ -232,7 +242,8 @@ def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
     filedense =file.replace('_','-dense_')
     # command for sparsing file
     command = mpicommand + " " +  wdir + \
-             "wabbit-post --dense-to-sparse --eps=%1.1e --order=CDF44 --eps-norm=L2 " + memory + \
+             "wabbit-post --dense-to-sparse --eps=%1.1e" + " --order="+wavelets \
+                 + " --eps-norm="+ normalization+ memory + \
               " "+ filesparse
     # command for densing file again
     dense_command = mpicommand + " " +  wdir + \
@@ -276,12 +287,35 @@ def adaptation_for_different_eps(wdir, data_folder, eps_list, Jmax, memory, mpic
 # %% adapt one snapshot for different eps: logfile written in adapt .log
     
 
-
-def compute_vorticity(wdir, uxfile, uyfile, memory, mpicommand):
+def compute_vorabs(wdir, uxfile, uyfile, memory, mpicommand, uzfile=""):
 
     # command for sparsing file
-    command = mpicommand + " " +  wdir + \
-             "wabbit-post --vorticity "+ uxfile + " " + uyfile + " 2" 
+    if not uzfile:
+        command = mpicommand + " " +  wdir + \
+             "wabbit-post --vor-abs "+ uxfile + " " + uyfile + " 4" 
+    else:
+        command = mpicommand + " " +  wdir + \
+             "wabbit-post --vor-abs "+ uxfile + " " + uyfile + " " + uzfile + " 4" 
+
+
+    print("\n", command,"\n\n")
+    success = os.system(command)   # execute command
+    
+    if success != 0:
+        print("command did not execute successfully")
+
+    return success
+
+def compute_vorticity(wdir, uxfile, uyfile, memory, mpicommand, uzfile=""):
+
+    # command for sparsing file
+    if not uzfile:
+        command = mpicommand + " " +  wdir + \
+             "wabbit-post --vorticity "+ uxfile + " " + uyfile + " 4" 
+    else:
+        command = mpicommand + " " +  wdir + \
+             "wabbit-post --vorticity "+ uxfile + " " + uyfile + " " + uzfile + " 4" 
+
 
     print("\n", command,"\n\n")
     success = os.system(command)   # execute command
@@ -293,7 +327,8 @@ def compute_vorticity(wdir, uxfile, uyfile, memory, mpicommand):
 
 # %% run scripts:
 
-def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration, n_modes=30):
+def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, \
+                   reconstructed_iteration, n_modes=30, wavelets="CDF44",normalization="L2"):
 
     wdir = dirs["wabbit"]
     work = dirs["work"]
@@ -312,7 +347,10 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, re
                 return
 
         success = 0
-        #success += run_wPOD_for_different_eps(dirs, data_lists, eps_list, Jmax, memory, mpicommand, save_log=True, n_modes=n_modes)
+        # success += run_wPOD_for_different_eps(dirs, data_lists, eps_list,\
+                                             # Jmax, memory, mpicommand, save_log=True, \
+                                              # n_modes=n_modes, wavelets=wavelets, \
+                                              # normalization=normalization)
         if success!=0:
             print("wPOD did not execute successfully")
             break
@@ -324,7 +362,8 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, re
             break
 
         success += run_wPODerr_for_different_eps(wdir, data_lists, mode_lists, eps_list,  Jmax , \
-                   reconstructed_iteration, memory, mpicommand,workdir = work)
+                   reconstructed_iteration, memory, mpicommand,workdir = work, wavelets=wavelets, \
+                                              normalization=normalization)
         if success!=0:
             print("error estimation did not execute successfully")
             break

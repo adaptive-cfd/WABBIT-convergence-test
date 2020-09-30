@@ -20,6 +20,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
+from wPOD.sci_notation import sci_notation
 ###############################################################################
 # LATEX FONT
 font = {'family' : 'serif',
@@ -31,7 +32,7 @@ rc('text', usetex=True)
 
 # %% get the data
 def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=10, \
-                   eps_list_plot=[],show_legend=False, show_title=False, alternate_markers=False):
+                   eps_list_plot=[],show_legend=False, show_title=False, alternate_markers=False,ref_eigvals=False):
      # n_star ... mode number at which delta err= |wPODerr - PODerr|
     plt.close("all")
     pic_dir = dirs["images"]
@@ -42,27 +43,40 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
     markers = ['o', '.', 'x', '+', 'v', '^', '<', '>', 's', 'd']
     files = {}
     data = {}
-    
+
     eps_dir_list=eps_dir_list[::-1]
     eps_list=eps_list[::-1]
+    Neps = len(eps_list)
     for Jmax, jmax_dir in zip(Jmax_list, Jmax_dir_list):
         fig[0], ax[0] = plt.subplots()
         fig[1], ax[1] = plt.subplots()
         fig[2], ax[2] = plt.subplots()
-        delta_err=np.zeros(np.size(eps_dir_list))
+        delta_err={"mean": np.zeros(Neps),
+                   "errorbar_asymmetric" : [np.zeros(Neps-1),np.zeros(Neps-1)]}
+                   
         Neps = len(eps_dir_list)
         clist=[]
         mlist=[]
-       
-        file_ref = work+"/"+jmax_dir+eps_dir_list[-1] + "/eigenvalues.txt"
-        print("reference file is: ", file_ref)
-        f = open(file_ref)
-        data_ref = [[float(num) for num in line.split()] for line in f]
-        data_ref = np.asarray(data_ref)
-        eigs_ref = np.flip(data_ref[:,1])
-        eigs_ref = eigs_ref[eigs_ref>0]
-        PODerr_ref = 1-np.cumsum(eigs_ref)/np.sum(eigs_ref)
-        PODerr_ref = np.insert(PODerr_ref,0,1)
+        if ref_eigvals is False:
+            file_ref = work+"/"+jmax_dir+eps_dir_list[-1] + "/L2error.txt"
+            print("reference file is: ", file_ref)
+            f = open(file_ref)
+            data_ref = [[float(num) for num in line.split()] for line in f]
+            data_ref = np.asarray(data_ref)
+            PODerr_ref=np.insert(data_ref,0,1)
+        else:
+            file_ref = work+"/"+jmax_dir+eps_dir_list[-1] + "/eigenvalues.txt"
+            print("reference file is: ", file_ref)
+            f = open(file_ref)
+            data_ref = [[float(num) for num in line.split()] for line in f]
+            data_ref = np.asarray(data_ref)
+            eigs_ref = np.flip(data_ref[:,1])
+            eigs_ref = eigs_ref[eigs_ref>0]
+            PODerr_ref = 1-np.cumsum(eigs_ref)/np.sum(eigs_ref)
+            PODerr_ref = np.insert(PODerr_ref,0,1)
+        #eigs_ref = np.flip(data_ref[:,1])
+        #eigs_ref = eigs_ref[eigs_ref>0]
+     #   PODerr_ref = 1-np.cumsum(eigs_ref)/np.sum(eigs_ref)
         for i, eps_dir in enumerate(eps_dir_list):
             #if np.mod(i,2) == 0: continue
             files["L2error"] = work+"/"+jmax_dir+eps_dir + "/L2error.txt"
@@ -82,7 +96,14 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
             wPODerr = data["L2error"]
             PODerr = np.insert(PODerr,0,1)
             wPODerr =np.insert(wPODerr,0,1)
-            delta_err[i]=np.abs(PODerr_ref[n_star]- wPODerr[n_star])
+            Nranks=len(wPODerr)
+            mean_err = np.mean(np.abs(PODerr_ref[1:Nranks]- wPODerr[1:]))
+            delta_err["mean"][i]= mean_err
+            if i < Neps-1:
+                delta_err["errorbar_asymmetric"][1][i]=np.max(np.abs(PODerr_ref[1:Nranks]- wPODerr[1:])) \
+                        - mean_err
+                delta_err["errorbar_asymmetric"][0][i]=mean_err - np.min(np.abs(PODerr_ref[1:Nranks]- wPODerr[1:])) 
+            
             
         
              ########################
@@ -114,7 +135,7 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
             y = line.get_ydata()[-1]
             x = line.get_xdata()[-3]
             if key in eps_list_plot and not show_legend :
-                ax[1].annotate("$\\epsilon="+str(key)+"$", xy=(x,y), #color=line.get_color(), 
+                ax[1].annotate("$\\epsilon= $"+sci_notation(key)+" ", xy=(x,y), #color=line.get_color(), 
                          xycoords = 'data', textcoords="offset points",
                          size=14, va="center")
             yplt=wPODerr[-1]*0.1 # reference point for start of the arrow
@@ -125,7 +146,7 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
         ax[1].semilogy(PODerr_ref, 'k--', mfc='none',\
                         linewidth=1,label='$\mathcal{E}_{\mathrm{POD}},\epsilon =0.0$') 
             
-        ax[1].set_xlim(-1,len(wPODerr)+6)
+        ax[1].set_xlim(-1,len(wPODerr)+10)
         ax[1].set_ylim(PODerr[len(wPODerr)+1],2)
         ## plot arrow pointing downwards to eps -> 0
         ax[1].annotate(" $\epsilon\\to0 $",
@@ -160,19 +181,20 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
         # plot delta_POD error
         ##########################
         if eps_list[-1]==0:
-            ax[2].scatter(eps_list[:-1],delta_err[:-1],color=clist[:-1],label="$\mid \mathcal{E}_{\mathrm{POD}}(r^*,0)-\mathcal{E}_{\mathrm{wPOD}}(r^*,\epsilon) \mid$")
-            #alpha = wt.logfit(eps_list[:-1],delta_err[:-1])
+            ax[2].scatter(eps_list[:-1],delta_err["mean"][:-1],color=clist[:-1],label="$\mid \mathcal{E}_{\mathrm{POD}}(r^*,0)-\mathcal{E}_{\mathrm{wPOD}}(r^*,\epsilon) \mid$")
+            print(delta_err["errorbar_asymmetric"])
+            ax[2].errorbar(eps_list[:-1],delta_err["mean"][:-1],yerr=delta_err["errorbar_asymmetric"], linestyle="None",color=clist[:-1])            #alpha = wt.logfit(eps_list[:-1],delta_err[:-1])
             #ax[2].loglog(eps_list[:-1],10**alpha[1]*np.asarray(eps_list[:-1])**alpha[0],"k--",label="$\mathcal{O}(\epsilon^{"+str(np.round(alpha[0],2)[0])+"})$")
             ax[2].loglog(eps_list[:-1],np.asarray(eps_list[:-1])**2,"k--", label="$\epsilon^2$")
         else:
-            ax[2].loglog(eps_list,delta_err,"*",label="$\mid \mathcal{E}_{\mathrm{POD}}(r^*,0)-\mathcal{E}_{\mathrm{wPOD}}(r^*,\epsilon) \mid$")#,color=clist[:-1])
+            ax[2].loglog(eps_list,delta_err,"*",label=r"$\mid \mathcal{E}_{\mathrm{POD}}(r^*,0)-\mathcal{E}_{\mathrm{wPOD}}(r^*,\epsilon) \mid$")#,color=clist[:-1])
             #alpha = wt.logfit(eps_list[:],delta_err[:])
             #ax[2].loglog(eps_list,10**alpha[1]*np.asarray(eps_list)**alpha[0],"k--",label="$\mathcal{O}(\epsilon^{"+str(np.round(alpha[0],2)[0])+"})$")
             ax[2].loglog(eps_list[:-1],np.asarray(eps_list[:-1])**2,"k--", label="$\epsilon^2$")
             
         ax[2].set_xlabel("threshold $\epsilon$")
         ax[2].set_ylabel("error")
-        ax[2].legend()
+        ax[2].legend(loc="upper left",fontsize=18)
         
         if show_legend:
             ax[1].legend(loc="upper right",fontsize="17")
@@ -190,7 +212,7 @@ def plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dirs, n_star=
         fig[1].savefig(pic_dir+"/wPODerror_J"+str(Jmax)+".svg", dpi=300, transparent=True, bbox_inches='tight' )
         fig[2].savefig(pic_dir+"/deltaPODerror_J"+str(Jmax)+".svg", dpi=300, transparent=True, bbox_inches='tight' )
     
-    return delta_err[::-1],clist[::-1]
+    return delta_err["mean"][::-1],clist[::-1]
 
 def plot_errorWavelet_vs_wPOD(eps_list,delta_err,l2error,clist=None,fname=None,Jmax=5):
             

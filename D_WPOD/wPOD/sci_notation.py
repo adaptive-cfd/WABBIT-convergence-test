@@ -19,7 +19,7 @@ def sci_notation(num, decimal_digits=1, precision=None, exponent=None):
     explicitly.
     """
     if num == 0:
-        return "$0$"
+        return "$0.0$"
     if exponent is None:
         exponent = int(floor(log10(abs(num))))
     coeff = round(num / float(10**exponent), decimal_digits)
