@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 ###############################################################################
 home = expanduser("~")
 # 1.) Location of images saved during post processing
-pic_dir = "./images"
+pic_dir =home+"/develop/WPOD/D_WPOD//images"
 # 2.) directoy of wabbit-post executable
 #wdir = "/home/krah/develop/WABBIT/"++
 wdir = home+"/develop/WABBIT/"
@@ -32,9 +32,9 @@ dirs= {
 
 
 wabbit_setup = {
-        'mpicommand' : "nice -n 19 mpirun -np 2",
+        'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
 #        'mpicommand' : "mpirun -np 2",
-        'memory'     : "--memory=30GB"
+        'memory'     : "--memory=40GB"
         }
 ###############################################################################
 # LATEX FONT

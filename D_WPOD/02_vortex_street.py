@@ -26,11 +26,11 @@ rc('text', usetex=True)
 ###############################################################################
 # directories needed
 dir_list={}
-dir_list["work"]=dirs["work"] +"/cyl/"
-dir_list["images"]= dirs["images"] + "/cyl/"
+dir_list["work"]=dirs["work"] +"/cyl3/"
+dir_list["images"]= dirs["images"] + "/cyl3/"
 dir_list["wabbit"]= wdir
 
-data = {"folder" :  home+"/develop/results/20200908_cylinder/", # where the data is stored
+data = {"folder" : home+ "/develop/results/20200908_cyl/", # where the data is stored
         "qname" : ["ux", "uy", "p"]
         }
 
@@ -48,7 +48,7 @@ data = {"folder" :  home+"/develop/results/20200908_cylinder/", # where the data
 Jmax_list = [6]
 Jmax_dir_list = [ "Jmax"+str(Jmax)+"/" for Jmax in Jmax_list]
 #eps_list = np.asarray([0.0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])
-eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-8,0,10)])
+eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-8,0,9)])
 eps_dir_list = [ "eps%1.1e" %eps for eps in eps_list]
 
 
@@ -58,18 +58,19 @@ reconstructed_iteration =7
 # %%
 run_wabbit_POD(wabbit_setup, dir_list, data, Jmax_list, eps_list, mode_lists, reconstructed_iteration)
 
-
-exit
 ###############################################################################
 ###############################################################################
 # %% 
 
-delta_err,clist=plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list,eps_list, dir_list, show_legend=True)
+delta_err,clist=plot_wPODerror(Jmax_list, Jmax_dir_list,eps_dir_list[:],eps_list[:], \
+                               dir_list,eps_list_plot=eps_list[1:], alternate_markers=False, \
+                               show_legend=True, ref_eigvals=True, n_star=30, eigs_larger_eps=True)
 # %% Compression ERROR
+eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-8,0,9)])
 wdir = dirs["wabbit"]
 fig_adapt = [plt.figure(41)]
 ax_adapt = [fig.add_subplot() for fig in fig_adapt]
-h5_fname = [sorted(glob.glob(data["folder"]+'/Jmax6/'+qty+'*.h5'))[100] for qty in data["qname"]]
+h5_fname = [sorted(glob.glob(data["folder"]+'/Jmax6/'+qty+'*550*.h5'))[0] for qty in data["qname"]]
 [l2error, linferror, Nblocks, Nblocksdense]=adapt2eps(h5_fname, \
 wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], wavelets="CDF44",\
 normalization = "L2",create_log_file=True, show_plot=True, pic_dir=dir_list["images"])
@@ -82,11 +83,11 @@ plt.close("all")
 fig, axes = plt.subplots(nrows=3, ncols=2)
 fig.subplots_adjust(bottom=0.001,top = 0.999,wspace=0.01, hspace=-0.8)
 
-for i, eps in enumerate(eps_list[::2]):
+for i, eps in enumerate(np.take(eps_list,[0,2,4,6,7,8])):
     
-    files=sorted(glob.glob('./adapt_files/u[x,y]-eps_%1.1e_'%eps+'*.h5'))
+    files=sorted(glob.glob('./adapt_files/u[1,2]-eps%1.1e_'%eps+'*.h5'))
     success=compute_vorticity(wdir, files[0], files[1], wabbit_setup["memory"], "")
-    file = files[0].replace('ux-eps_%1.1e_'%eps,'vorx_')
+    file = files[0].replace('u1-eps%1.1e_'%eps,'vorx_')
     file = os.path.split(file)[1]
     ax,cb,hplot = wt.plot_wabbit_file(file,cmap=fc,caxis_symmetric=True,dpi=300, \
                                  shading='flat', caxis=[-6,6], \
@@ -118,7 +119,7 @@ vorx_files = []
 p_files = []
 for i, eps in enumerate(eps_list[:1]):
     for nmode in range(30):
-        eps=1.3e-04
+        eps=1e-02
         files = [sorted(glob.glob(dir_list["work"]+"Jmax6/eps%1.1e"%eps+'/'+qty+'*.h5'))[nmode] for qty in ["mode1","mode2","mode3"]]
         success=compute_vorticity(wdir, files[0], files[1], wabbit_setup["memory"], "")
         file = files[0].replace('mode1_','vorx-mode_')
@@ -143,18 +144,18 @@ fc = farge_colormaps.farge_colormap_multi( taille=600,limite_faible_fort=0.2, et
 
 vorx_files_sparse = []
 p_files_sparse = []
-eps =1.3e-04
+eps =1e-02
 
-for nmode in range(29):
-        files = [sorted(glob.glob(dir_list["work"]+"Jmax6/eps%1.1e"%eps+'/'+qty+'*.h5'))[nmode] for qty in ["reconst1","reconst2","reconst3"]]
+for nmode in range(15):
+        files = [sorted(glob.glob(dir_list["work"]+"Jmax6/eps%1.1e"%eps+'/'+qty+'*.h5'))[nmode] for qty in ["reconst1","reconst2"]]
         file_ux = os.path.relpath(files[0],'.')
         file_uy = os.path.relpath(files[1],'.')
         success=compute_vorticity(wdir, file_ux, file_uy, wabbit_setup["memory"], "")
         file = files[0].replace('reconst1-','vorx-recon-')
-        file_0 = "vorx_000100000000.h5"
+        file_0 = os.path.split(files[1])[1].replace('reconst2-%3.3d'%(nmode+1),'vorx')
         os.system("mv "+file_0+" "+file)
         vorx_files_sparse.append(file)
-        p_files_sparse.append(files[2])
+        #p_files_sparse.append(files[2])
 
 # %%
 eps =0 
@@ -166,7 +167,7 @@ for nmode in range(29):
         file_uy = os.path.relpath(files[1],'.')
         success=compute_vorticity(wdir, file_ux, file_uy, wabbit_setup["memory"], "")
         file = files[0].replace('reconst1-','vorx-recon-')
-        file_0 = "vorx_000*00.h5"
+        file_0 = os.path.split(files[1])[1].replace('reconst2-%3.3d'%(nmode+1),'vorx')
         os.system("mv "+file_0+" "+file)
         #print(files) 
         vorx_files_dense.append(file)
@@ -184,7 +185,7 @@ for i,fsparse in enumerate(vorx_files_sparse[1:11:4]):
     #match = re.search('vorx-recon-(\d+)', fsparse)
     match = re.search('vorx-recon-(\d+)', fsparse)
     r = int(match.group(1))
-    at = AnchoredText("$r= "+sci_notation(r,1)+"$",
+    at = AnchoredText(r"$r=$ "+sci_notation(r,1)+"",
                   prop=dict(size=11), frameon=True,
                   loc='upper right',
                   )
@@ -200,7 +201,7 @@ for i,fdense in enumerate(vorx_files_dense[1:11:4]):
     #match = re.search('vorx-recon-(\d+)', fsparse)
     match = re.search('vorx-recon-(\d+)', fdense)
     r = int(match.group(1))
-    at = AnchoredText("$r=$"+sci_notation(r,1),
+    at = AnchoredText(r"$r=$"+sci_notation(r,1)+"",
                   prop=dict(size=10), frameon=True,
                   loc='upper right',
                   )

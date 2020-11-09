@@ -58,8 +58,10 @@ def init(x,t,L, case="Mendez", slow_decay=True):
            freq_list = np.arange(0,len(x0_list)+1)
            random.shuffle(freq_list)
            if slow_decay:
+               lambd = [np.exp(-k/100) for k in freq_list]
                amp = [np.exp(-k/100)*np.sin(np.pi*k*t) for k in freq_list]
            else:
+               lambd = [np.exp(-k/3) for k in freq_list]
                amp = [np.exp(-k/3)*np.sin(np.pi*k*t) for k in freq_list]
                
                 
@@ -82,13 +84,15 @@ def init(x,t,L, case="Mendez", slow_decay=True):
        plt.figure(22)
        u = np.reshape(ufield,[*N,Nt])
        plt.pcolormesh(u[...,Nt//2])
-       
+       lambd=np.sort(np.asarray(lambd))
+       lambd=lambd[::-1]
+       lambd=lambd[:Nt]
        # plt.figure(11)
        # [U,S,V]= np.linalg.svd(ufield,0)
        # plt.semilogy(S,'*')
        # plt.xlabel("$n$")
        # plt.ylabel("$\sigma_n$")
-       return ufield, amp
+       return ufield, amp, lambd
    
 
 def synthetic_test_case(dirs, params, wabbit_setup):
@@ -106,7 +110,7 @@ def synthetic_test_case(dirs, params, wabbit_setup):
     t = np.linspace(0,2*np.pi,params.Nt)
     [X,Y] = np.meshgrid(*x)
     
-    phi_matrix, amplitudes = init([X,Y],t,params.domain.L,case=params.case, slow_decay=params.slow_singular_value_decay)
+    phi_matrix, amplitudes, lambd = init([X,Y],t,params.domain.L,case=params.case, slow_decay=params.slow_singular_value_decay)
    
     phi = np.reshape(phi_matrix,[*params.domain.N,params.Nt])
     

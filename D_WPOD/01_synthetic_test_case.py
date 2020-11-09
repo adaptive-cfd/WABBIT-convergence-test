@@ -30,8 +30,8 @@ class params:
    wavelets = "CDF44"
    slow_singular_value_decay=False
    #eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-12,0,6)])  # threshold of adaptation
-   eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)]) # threshold of adaptation
-  # eps_list =np.delete(eps_list,[6,5,10,11])
+   eps_list  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-5,0,10)])
+   #eps_list = np.delete(eps_list,1)
    jmax_list = [4,5,6]        # maximal tree level
    Nt= 2**7
    target_rank = 30
@@ -44,11 +44,11 @@ class params:
 # directories needed
 dir_list=dirs.copy()     
 if params.slow_singular_value_decay:
-    dir_list["work"]=dirs["work"]+"/bump/CDF44a/01/"
-    dir_list["images"]=dirs["images"]+"/bump/CDF44a/01/"
+    dir_list["work"]=dirs["work"]+"/bump/CDF44c/01/"
+    dir_list["images"]=dirs["images"]+"/bump/CDF44c/01/"
 else:
-    dir_list["work"]=dirs["work"]+"/bump/CDF44a/02/"
-    dir_list["images"]=dirs["images"]+"/bump/CDF44a/02/"
+    dir_list["work"]=dirs["work"]+"/bump/CDF44c/02/"
+    dir_list["images"]=dirs["images"]+"/bump/CDF44c/02/"
 
 os.makedirs(dir_list["images"], exist_ok=True)
 os.makedirs(dir_list["work"], exist_ok=True)
@@ -65,9 +65,8 @@ data = {"folder" :   dir_list["work"],
         "qname" : ["u"]
         }
 mode_lists = ["mode1_list.txt"]
-# run_wabbit_POD(wabbit_setup, dir_list, data, params.jmax_list, params.eps_list, mode_lists,\
-#                reconstructed_iteration=10,n_modes=params.target_rank,  wavelets=params.wavelets)
-exit
+run_wabbit_POD(wabbit_setup, dir_list, data, params.jmax_list, params.eps_list, mode_lists,\
+                reconstructed_iteration=10,n_modes=params.target_rank,  wavelets=params.wavelets)
 # %%
 
 delta_err,clist=plot_wPODerror(params.jmax_list, Jmax_dir_list,eps_dir_list, \
@@ -76,6 +75,7 @@ delta_err,clist=plot_wPODerror(params.jmax_list, Jmax_dir_list,eps_dir_list, \
 
 # %% Adaption test 
 wdir = dir_list["wabbit"]
+plt.close("all")
 fig_adapt = [plt.figure(38),plt.figure(39), plt.figure(37)]
 ax_adapt = [fig.add_subplot() for fig in fig_adapt]
 eps_list_  = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-15,1,20)])  # thre
@@ -83,7 +83,7 @@ for k,jmax in enumerate(params.jmax_list):
     markers = ['o', 'x', '<', 'v', '^', '+', '>', 's', 'd']
     h5_fname = sorted(glob.glob(dir_list["work"]+"Jmax%d"%jmax+'/*.h5'))[-1]
     [l2error, linferror, Nblocks, Nblocksdense]=adapt2eps(h5_fname, \
-    wdir, eps_list_, wabbit_setup['memory'], '', \
+    wdir, eps_list_, wabbit_setup['memory'], 'mpirun -np 6', \
     normalization = params.wavelets_norm,create_log_file=True, show_plot=False,
     wavelets=params.wavelets)
     Ne = 1
@@ -161,7 +161,7 @@ x = [np.linspace(0,params.domain.L[d],params.domain.N[d]) \
 t = np.linspace(0,2*np.pi,params.Nt)
 [X,Y] = np.meshgrid(*x)
 
-phi_matrix, amplitudes = init([X,Y],t,params.domain.L,case=params.case, slow_decay=params.slow_singular_value_decay)
+phi_matrix, amplitudes,lambd = init([X,Y],t,params.domain.L,case=params.case, slow_decay=params.slow_singular_value_decay)
    
 phi = np.reshape(phi_matrix,[*params.domain.N,params.Nt])
 
@@ -188,78 +188,101 @@ print("rsvd time: %2.2f sec, Problem size: %2d "% (t_rsvd,Psize))
 
 error_rsvd=[np.linalg.norm(phi_matrix-rU[:,:r]@np.diag(rS[:r])@rVT[:r,:],ord=2)/S[0] for r in range(np.size(rVT,0)+1)]
 
-# %% wPOD error vs eps
-plot_wPODerror(params.jmax_list, Jmax_dir_list,eps_dir_list,params.eps_list, dir_list, n_star=30)
-
 
 
 # %% wPOD error vs number of blocks
+from matplotlib.ticker import NullFormatter
+
+plt.close("all")
 wPODerr_dict,PODerr_dict, delta_PODerr = read_wPOD_error(params,dir_list)
 
-wPODerr = wPODerr_dict[params.jmax_list[0],params.eps_list[2]]
-PODerr = PODerr_dict[params.jmax_list[0],params.eps_list[2]]
+wPODerr = wPODerr_dict[params.jmax_list[0],params.eps_list[1]]
+PODerr = PODerr_dict[params.jmax_list[0],params.eps_list[1]]
+
+
+if params.slow_singular_value_decay:
+    labl_lambd="$\exp(-k/100)$"
+    zoom_loc = [0.1, 0.1, 0.4, 0.4]
+else:
+    labl_lambd="$\exp(-k/3)$"
+    zoom_loc = [0.05, 0.1, 0.4, 0.4]
 
 # PLOT eigenvalues
 fig=plt.figure(34)
 ax = fig.add_subplot()
 ax.semilogy((S/S[0])**2,'o',label="SVD", markersize=2)
 ax.semilogy(PODerr,'x',label="wPOD",markersize=2)    
+ax.semilogy(lambd**2,'k-',label=labl_lambd, markersize=2)
 #ax.semilogy(np.sqrt(wPODerr), linestyle='--', label="wPOD tot")
 #ax.semilogy(error_rsvd,':',label="random tot")
 ax.semilogy((rS/rS[0])**2,'+', label="rSVD",markersize=2)
 ax.set_ylabel("eigenvalues $\lambda_k/\lambda_1$")
 ax.set_xlabel("$k$")
-lg=plt.legend(loc=7)
+ax.set_ylim([1e-17,10])
+ax.set_xlim([0,50])
+lg=plt.legend(loc=4,fontsize=18)
 lg.legendHandles[0]._legmarker.set_markersize(6)
 lg.legendHandles[1]._legmarker.set_markersize(6)
 lg.legendHandles[2]._legmarker.set_markersize(6)
+lg.legendHandles[3]._legmarker.set_markersize(6)
 
 # inset axes....
-axins = ax.inset_axes([0.2, 0.1, 0.4, 0.4])
-axins.semilogy((S/S[0])**2,'o',fillstyle="none")
-axins.semilogy(PODerr,'x',label="wPOD")
-axins.semilogy((rS/rS[0])**2,'+', label="rSVD")
-# sub region of the original image
+#axins = ax.inset_axes(zoom_loc)
+#axins.semilogy((S/S[0])**2,'o',fillstyle="none")
+#axins.semilogy(PODerr,'x',label="wPOD")
+#axins.semilogy(lambd**2,'k-',label=labl_lambd)
+#axins.semilogy((rS/rS[0])**2,'+', label="rSVD")
+#axins.yaxis.set_major_formatter(NullFormatter())
+#axins.yaxis.set_minor_formatter(NullFormatter())
+## sub region of the original image
+#
+#x1, x2, y1, y2 = 0, params.target_rank+15, (S[params.target_rank+15]/S[0])**2, (S[0]/S[0])**2
+#axins.set_xlim(x1, x2)
+#axins.set_ylim(y1, y2)
+#axins.set_xticks([0,10,20,30,40])
+#axins.set_yticks([])
+##axins.set_xticklabels('')
+#axins.set_yticklabels('')
+#ax.indicate_inset_zoom(axins)
 
-x1, x2, y1, y2 = 0, params.target_rank+15, (S[params.target_rank+40]/S[0])**2, (S[0]/S[0])**2
-axins.set_xlim(x1, x2)
-axins.set_ylim(y1, y2)
-axins.set_xticks([0,10,20,30,40])
-#axins.set_xticklabels('')
-axins.set_yticklabels('')
-
-ax.indicate_inset_zoom(axins)
 plt.show()
 fig.savefig(dir_list["images"]+ 'lambda_wPODvsrSVD.png', dpi=300, transparent=True, bbox_inches='tight' )
+fig.savefig(dir_list["images"]+ 'lambda_wPODvsrSVD.svg', dpi=300, transparent=True, bbox_inches='tight' )
 
 # PLOT total error
 fig=plt.figure(120)
 ax = fig.add_subplot()
 ax.semilogy((S/S[0])**2,'o',label="SVD",markersize=2)
 ax.semilogy(wPODerr,'x',label="wPOD",markersize=2)
+ax.semilogy(lambd**2,'k-',label=labl_lambd, markersize=2)
 ax.semilogy((np.asarray(error_rsvd))**2,'+', label="rSVD",markersize=2)
 ax.set_ylabel("$\mathcal{E}_{\\mathrm{(r)SVD/wPOD}}$")
-ax.set_xlabel("$r$")
-lg=plt.legend(loc=7)
+ax.set_xlabel("$k$ modes")
+ax.set_ylim([1e-17,10])
+ax.set_xlim([0,50])
+lg=plt.legend(loc=4,fontsize=18)
 lg.legendHandles[0]._legmarker.set_markersize(6)
 lg.legendHandles[1]._legmarker.set_markersize(6)
 lg.legendHandles[2]._legmarker.set_markersize(6)
+lg.legendHandles[3]._legmarker.set_markersize(6)
 
 # inset axes....
-axins = ax.inset_axes([0.2, 0.1, 0.4, 0.4])
-pl=axins.semilogy((S/S[0])**2,'o',fillstyle="none")
-axins.semilogy(wPODerr,'x',label="wPOD",)
-axins.semilogy((np.asarray(error_rsvd))**2,'+', label="rSVD")
-# sub region of the original image
-x1, x2, y1, y2 = 0, params.target_rank+15, (S[params.target_rank+15]/S[0])**2, (S[0]/S[0])**2
-axins.set_xlim(x1, x2)
-axins.set_ylim(y1, y2)
-axins.set_xticks([0,10,20,30,40])
-axins.set_yticks([])
-axins.set_yticklabels('')
+#axins2 = ax.inset_axes(zoom_loc)
+#pl=axins2.semilogy((S/S[0])**2,'o',fillstyle="none")
+#axins2.semilogy(wPODerr,'x',label="wPOD",)
+#axins2.semilogy(lambd**2,'k-',label=labl_lambd, markersize=2)
+#axins2.semilogy((np.asarray(error_rsvd))**2,'+', label="rSVD") 
+## sub region of the original image
+#x1, x2, y1, y2 = 0, params.target_rank+15, (S[params.target_rank+15]/S[0])**2, (S[0]/S[0])**2
+#axins2.set_xlim(x1, x2)
+#axins2.set_ylim(y1, y2)
+#axins2.set_xticks([0,10,20,30,40])
+#axins2.yaxis.set_major_formatter(NullFormatter())
+#axins2.yaxis.set_minor_formatter(NullFormatter())
+#ax.indicate_inset_zoom(axins2)
 
-ax.indicate_inset_zoom(axins)
 plt.show()
+fig.savefig(dir_list["images"]+ 'error_wPODvsrSVD.svg', dpi=300, transparent=True, bbox_inches='tight' )
 fig.savefig(dir_list["images"]+ 'error_wPODvsrSVD.png', dpi=300, transparent=True, bbox_inches='tight' )
  # %%
 def fetch_wPOD_params(params,dirs):
@@ -272,6 +295,7 @@ def fetch_wPOD_params(params,dirs):
                
                 if " Bs        =" in line:
                     Bs=[ int(b) for b in re.findall(r'\d+', line)]
+                    Bs = np.asarray(Bs)
                 if "Nblocks (if all trees dense)=" in line:
                     Nblocks_dense=int(re.findall(r'\d+', line)[0])
                 if "Nblocks used (sparse)=" in line:
@@ -291,11 +315,11 @@ def fetch_wPOD_params(params,dirs):
             params.Bs_list[n,:]= Bs
             params.Nbsparse_list[n,m]= Nblocks_sparse
             params.Nbdense_list[n,m]= Nblocks_dense
-            params.Np_list[n,m]= np.prod(Bs)*Nblocks_sparse
+            params.Np_list[n,m]= np.prod(Bs[:2]-1)*Nblocks_sparse
             
 
 # %%
-fetch_wPOD_params(params,dirs)
+fetch_wPOD_params(params,dir_list)
 delta_err_rsvd = [np.abs(error_rsvd[k]**2-error_svd[k]**2) for k in range(params.target_rank+1)]
 fig=plt.figure(35)
 ax = fig.add_subplot()
@@ -303,7 +327,7 @@ ax = fig.add_subplot()
 markers=['o', '+', 'x', '*', '.', 'X']
 for n, Jmax in enumerate(params.jmax_list[:2]):
     delta_err_wPOD = [delta_PODerr[Jmax,eps][params.target_rank] for eps in params.eps_list[np.where(eps_list>0)]]            
-    ax.loglog(params.Np_list[n,:]/(np.prod(params.Bs_list[n,0])*params.Nbdense_list[n,0]*(nr_oversampl+params.target_rank)), delta_err_wPOD, \
+    ax.loglog(params.Np_list[n,:]/np.size(rU), delta_err_wPOD, \
               label="$J_{\\mathrm{max}} =%d $"%Jmax, marker=markers[n])
 
 xlim=ax.get_xlim()
@@ -313,3 +337,4 @@ ax.legend()
 ax.set_xlabel("memory efficiency $\\frac{S_\\mathrm{wPOD}}{S_\\mathrm{rSVD}}$")
 ax.set_ylabel("$\mid \mathcal{E}_{\mathrm{POD}}(r^*,0)-\mathcal{E}_{\mathrm{wPOD}}(r^*,\epsilon)\mid$")
 fig.savefig(dir_list["images"]+ 'memory_wPODvsrSVD.png', dpi=300, transparent=True, bbox_inches='tight' )  
+fig.savefig(dir_list["images"]+ 'memory_wPODvsrSVD.svg', dpi=300, transparent=True, bbox_inches='tight' )  

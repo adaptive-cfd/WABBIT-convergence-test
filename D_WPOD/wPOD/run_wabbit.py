@@ -347,10 +347,10 @@ def run_wabbit_POD(wabbit_setup, dirs, data, Jmax_list, eps_list, mode_lists, \
                 return
 
         success = 0
-        # success += run_wPOD_for_different_eps(dirs, data_lists, eps_list,\
-                                             # Jmax, memory, mpicommand, save_log=True, \
-                                              # n_modes=n_modes, wavelets=wavelets, \
-                                              # normalization=normalization)
+        success += run_wPOD_for_different_eps(dirs, data_lists, eps_list,\
+                                              Jmax, memory, mpicommand, save_log=True, \
+                                               n_modes=n_modes, wavelets=wavelets, \
+                                               normalization=normalization)
         if success!=0:
             print("wPOD did not execute successfully")
             break

@@ -13,7 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # %% adapt one snapshot for different eps: logfile written in adapt .log
-def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty", wavelets="CDF40", create_log_file=True, show_plot=True,pic_dir="./"):
+def adapt2eps_old(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty", wavelets="CDF40", create_log_file=True, show_plot=True,pic_dir="./"):
     
     import re
     import os
@@ -145,6 +145,124 @@ def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty"
         fig3.savefig(pic_dir+ 'compression_err_vs_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
 
     return l2error, linferror, Nblocks, Nblocksdense
+
+
+
+# h5_fname = '/home/phil/develop/WPOD/D_WPOD/bump/01/Jmax5/u_000006283185.h5'
+# wdir = '/home/phil/develop/WABBIT/'
+# eps_list = np.asarray([0]+[float("%1.1e" %eps) for eps in np.logspace(-4,0,10)])
+# wabbit_setup = {
+#          'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
+#          'memory'     : "--memory=16GB"
+#          }
+# [l2error,sucess]=adapt2eps(h5_fname, wdir, eps_list, wabbit_setup['memory'], wabbit_setup['mpicommand'], create_log_file=True)
+    
+
+
+
+
+
+
+
+
+def adapt2eps(fnames, wdir, eps_list, memory, mpicommand, normalization="Linfty", wavelets="CDF40", create_log_file=True, show_plot=True,pic_dir="./"):
+    
+    import re
+    import os
+    import glob
+    import wabbit_tools as wt
+    # generate new file names 
+    if  not isinstance(fnames, list):
+        fnames = [fnames]
+    
+    print( "Input data files: ", fnames, "\n")
+    success=0
+
+    folder = "./adapt_files/"
+    if not os.path.exists(folder):
+            os.mkdir(folder)
+    os.chdir(folder)
+    
+    Ncomponents = len(fnames)
+    sparse_files=[""] * Ncomponents
+    dense_files = [""] * Ncomponents
+    
+    Neps    = len(eps_list)
+    Nblocks = np.zeros([Neps])
+    l2error = np.zeros([Neps])
+    linferror = np.zeros([Neps])
+    
+    eps_string =",".join("%1.1e"%eps_list[i] for i in range(len(eps_list)))
+    
+    command = mpicommand + " " +  wdir + \
+    "wabbit-post --adaption-test --eps-list='"+eps_string+"' --order="+wavelets+" --eps-norm="+normalization +" " + memory + \
+    ' --list="'+ " ".join(fnames[p] for p in range(Ncomponents))+ '" --save_all' 
+    if create_log_file:
+        command += " >> adapt.log" 
+    success += os.system(command)
+    
+    file_ref = "compression_error.txt"
+    print("file is: ", file_ref)
+    f = open(file_ref)
+    lines = f.readlines()[1:]
+    data_ref = [[float(num) for num in line.split()] for line in lines]
+    data_ref = np.asarray(data_ref)
+    l2error = data_ref[:,1]
+    Nblocks = data_ref[:,2]
+    CompressionF = data_ref[:,3] 
+            
+
+    os.chdir("../")
+    
+  
+    if show_plot:
+        ##############################################################################
+        #    Plot
+        ##############################################################################
+        #### plot Lp error    
+        fig1, ax1 = plt.subplots() 
+        fig2, ax2 = plt.subplots() 
+        Ne = 0
+        l2plt, = ax1.loglog(eps_list[Ne:],l2error[Ne:],'-o', label="data")
+        #linfplt, = ax1.loglog(eps_list[Ne:],linferror[Ne:],'-.*', label= "$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$")
+        ####  plot compression rate
+        ax2.semilogx(eps_list, CompressionF,'-o')
+        # Create a legend for the first line.
+        ax1.loglog(eps_list,eps_list, 'k--',label=r"$\epsilon$")
+        ax1.grid(which='both',linestyle=':')
+        ax1.set_xlabel("Threshold $\epsilon$")
+        ax1.set_ylabel(r"Relative Compression Error $\mathcal{E}_\mathrm{wavelet}$")
+        ax1.legend()
+        
+        #ax2.legend()
+        ax2.grid(which='both',linestyle=':')
+        ax2.set_xlabel("Threshold $\epsilon$")
+        ax2.set_ylabel("Compression Factor $C_{\mathrm{f}}$")
+        ax1.set_xlim=ax2.get_xlim()
+        
+        
+        ####  plot compression rate vs error
+        fig3, ax3 = plt.subplots() 
+        ax3.semilogy(CompressionF, l2error,'-o')
+        ax3.set_ylim(ax1.get_ylim())
+        # Create a legend for the first line.
+        
+        #ax2.legend()
+        ax3.grid(which='both',linestyle=':')
+        ax3.set_ylabel(r"Relative Compression Error $\mathcal{E}_\mathrm{wavelet}$")
+        ax3.set_xlabel("Compression Factor $C_{\mathrm{f}}$")
+        
+        
+        fig1.savefig( 'compression_err4th.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+        fig2.savefig( 'compression_rate.png', dpi=300, transparent=True, bbox_inches='tight' )
+        fig3.savefig( 'compression_err_vs_rate.png', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+        
+        
+        fig1.savefig(pic_dir+ 'compression_err4th.svg', dpi=300, transparent=True, bbox_inches='tight' )# -*- coding: utf-8 -*-
+        fig2.savefig(pic_dir+ 'compression_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
+        fig3.savefig(pic_dir+ 'compression_err_vs_rate.svg', dpi=300, transparent=True, bbox_inches='tight' )  
+
+    return l2error, l2error, CompressionF, 1
 
 
 
