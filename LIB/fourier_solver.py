@@ -224,7 +224,8 @@ class params_class:
         dx = np.min(self.geom.dX)
         L  = np.min(self.geom.L)
         delta = 0.005 * L
-        self.front = lambda x: 1/(1 + np.exp(-x/delta))
+        #self.front = lambda x: 1/(1 + np.exp(-x/delta))
+        self.front = lambda x: 0.5*(1 + np.tanh(x/delta))
         self.forward=lambda x: np.sigmoid(x/delta)
         if self.dim == 2:
             if case== "pacman":
@@ -390,12 +391,12 @@ if __name__ == "__main__":
     # choose pde [burgers,advection]
     pde = "react"
     case = "pacman"
-    Ngrid = [2**9,2**9]
+    Ngrid = [2**8,2**8]
     T = 2
     params = params_class(case=case, pde=pde, N=Ngrid, Nt = 200, T = T)
     params,q = solve_FOM(params)
     
     #%%
     import matplotlib.pyplot as plt
-    plt.pcolormesh(params.geom.X[0],params.geom.X[1],q[...,-1])
+    plt.pcolormesh(params.geom.X[0],params.geom.X[1],q[...,10])
     plt.colorbar()
