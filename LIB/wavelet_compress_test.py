@@ -25,7 +25,7 @@ dirs= {
 
 # setup for wabbit call
 wabbit_setup = {
-        'mpicommand' : "mpirun --use-hwthread-cpus -np 4",
+        'mpicommand' : "mpirun -np 8",
         'memory'     : "--memory=8GB"
         }
 # parameters to adjust
@@ -49,7 +49,7 @@ class params:
        return field
     
     ## sin(1/x)*sin(1/y)
-   def init1(x,L):                             # this function will be initialized on the domain
+   def init2(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
@@ -59,7 +59,7 @@ class params:
         return field     
     
       ## (x**2+y**2)*heaviside(x)
-   def init(x,L):                             # this function will be initialized on the domain
+   def init3(x,L):                             # this function will be initialized on the domain
         sigma = np.asarray(L)*0.01
         x0    = [Li/2 for Li in L]
         xrel  = [x-x0 for x,x0 in zip(x,x0)]
@@ -68,6 +68,8 @@ class params:
 ###############################################################################
 # %% 
 ###############################################################################
+
+
 
 
 
@@ -123,7 +125,7 @@ def wabbit_adapt(dirs, params, wabbit_setup):
             print("\n",command,"\n\n")
             success = os.system(command)   # execute command
             if np.mod(k,4)==0:
-                wt.plot_wabbit_file(file,savepng=True)
+                 wt.plot_wabbit_file(file,savepng=True)
             compress[j,k] = sum(wt.block_level_distribution_file( file ))
              
             print("\n",dense_command,"\n\n")
@@ -146,34 +148,38 @@ def wabbit_adapt(dirs, params, wabbit_setup):
     os.system("rm " + file_ref)
     return l2error,linferror,compress
 
-l2error, linferror, compress = wabbit_adapt(dirs, params, wabbit_setup)        
 
-# %%
-plt.close("all")
-fig1, ax1 = plt.subplots() 
-fig2, ax2 = plt.subplots() 
+if __name__ == "__main__":
 
-l2plt=[0]*len(params.jmax_list)
-linfplt=[0]*len(params.jmax_list)
-for j, jmax in enumerate(params.jmax_list):
-    l2plt[j], = ax1.loglog(params.eps_list,l2error[j,:],'-o', label ="$J_\mathrm{max}="+str(jmax)+'$')
-    linfplt[j], = ax1.loglog(params.eps_list,linferror[j,:],'-.*', label = "$J_\mathrm{max}="+str(jmax)+'$')
-    ####  plot compression rate
-    ax2.semilogx(params.eps_list,compress[j,:],'-o', label = "$J_\mathrm{max}="+str(jmax)+'$')
-
-l2_legend = ax1.legend(handles=l2plt, loc='lower right',title="$\Vert u(x) - [u(x)]^\epsilon \Vert_2$",fontsize='small')
-ax1.add_artist(l2_legend)
-linf_legend = ax1.legend(handles=linfplt, loc='upper left',title="$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$",fontsize='small')
-ax1.loglog(params.eps_list,params.eps_list, 'k--')
-ax1.grid(which='both',linestyle=':')
-ax1.set_xlabel("$\epsilon$")
-ax1.set_ylabel("relative error")
-
-ax2.legend()
-ax2.grid(which='both',linestyle=':')
-ax2.set_xlabel("$\epsilon$")
-ax2.set_ylabel("Compression Factor")
-ax1.set_xlim=ax2.get_xlim()
+    l2error, linferror, compress = wabbit_adapt(dirs, params, wabbit_setup)        
+    
+    
+    # %%
+    plt.close("all")
+    fig1, ax1 = plt.subplots() 
+    fig2, ax2 = plt.subplots() 
+    
+    l2plt=[0]*len(params.jmax_list)
+    linfplt=[0]*len(params.jmax_list)
+    for j, jmax in enumerate(params.jmax_list):
+        l2plt[j], = ax1.loglog(params.eps_list,l2error[j,:],'-o', label ="$J_\mathrm{max}="+str(jmax)+'$')
+        linfplt[j], = ax1.loglog(params.eps_list,linferror[j,:],'-.*', label = "$J_\mathrm{max}="+str(jmax)+'$')
+        ####  plot compression rate
+        ax2.semilogx(params.eps_list,compress[j,:],'-o', label = "$J_\mathrm{max}="+str(jmax)+'$')
+    
+    l2_legend = ax1.legend(handles=l2plt, loc='lower right',title="$\Vert u(x) - [u(x)]^\epsilon \Vert_2$",fontsize='small')
+    ax1.add_artist(l2_legend)
+    linf_legend = ax1.legend(handles=linfplt, loc='upper left',title="$\Vert u(x) - [u(x)]^\epsilon \Vert_\infty$",fontsize='small')
+    ax1.loglog(params.eps_list,params.eps_list, 'k--')
+    ax1.grid(which='both',linestyle=':')
+    ax1.set_xlabel("$\epsilon$")
+    ax1.set_ylabel("relative error")
+    
+    ax2.legend()
+    ax2.grid(which='both',linestyle=':')
+    ax2.set_xlabel("$\epsilon$")
+    ax2.set_ylabel("Compression Factor")
+    #ax1.set_xlim=ax2.get_xlim()
 
 
 ################################################
