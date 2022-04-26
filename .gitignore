@@ -12,3 +12,4 @@ return
 E_ARD/adaptive_*/
 A_CONV/adaptive_*/
 *.npy
+*.swp

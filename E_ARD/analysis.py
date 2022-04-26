@@ -134,12 +134,13 @@ def err_equidist(rootdir, norm, ref, file, inifile="blob-convection.ini"):
         Jmax_list.append(Jmax)
         
         fpath = d+"/"+file
-        fpath_ref = d+"/"+ref
         
         if (os.path.isfile(fpath)):
             # compute error
-            err = wt.wabbit_error_vs_wabbit( fpath, fpath_ref, norm=norm )
+            field, box, dx, X = wt.to_dense_grid(fpath)
+            err = np.linalg.norm(field-ref, ord=norm)/np.linalg.norm(ref, ord = norm)
             e.append( err )
+            print("rel error: %f" % err)
                 
 
     return e,Jmax_list
@@ -150,19 +151,27 @@ def err_equidist(rootdir, norm, ref, file, inifile="blob-convection.ini"):
 
 rootdir = "./adap*"+case+"*"
 dirsx = glob.glob( rootdir )
+# %%
+for d in dirsx:
+    chdir_make_equidistant(d,"q_000000000000.h5",7,wdir="../../../")
+    chdir_make_equidistant(d,"q_000001000000.h5",7,wdir="../../../")
+    
+
+rootdir = "./equi*pacman*"
+dirsx = glob.glob( rootdir )
 for d in dirsx:
     chdir_make_equidistant(d,"q_000000000000.h5",7,wdir="../../../")
     chdir_make_equidistant(d,"q_000001000000.h5",7,wdir="../../../")
 
 # %%    
     
-field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_pacman_Bs17_Jmax7_eps1.0e-03/q-dense_000001000000.h5")
+field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_pacman_Bs17_Jmax7_eps1.0e-09/q-dense_000000000000.h5")
 #field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_pacman_Bs17_Jmax7_eps1.0e-08/q-dense_000000000000.h5")
 # %%
 Xgrid = np.meshgrid(*X)
 
 field_ref = np.sqrt((Xgrid[0]-0.4)**2 + (Xgrid[1]-0.5)**2)-0.2
-field_ref=  1/(1+np.exp( field_ref /0.005))
+field_ref=  0.5*(1-np.tanh( field_ref /0.005))
 
 
 plt.pcolormesh(field_ref-field)
@@ -171,23 +180,29 @@ plt.show()
 print(np.linalg.norm(field-field_ref)/np.linalg.norm(field_ref))
 # %%
 #q_ref = solve_pacman(Ngrid=np.shape(field))
-q_ref = np.load("fft_pacman_ref.npy")
+q_ref = np.load("fft_pacman_ref_2048.npy")
 #tcpu_fft=6775.762
-field_ref = q_ref[...,100]
+field_ref = q_ref[...,-1]
+plt.pcolormesh(field_ref-field)
+plt.colorbar()
+plt.show()
+print(np.linalg.norm(field-field_ref)/np.linalg.norm(field_ref))
+
+#%%
 error_list,Jmax_list,eps_list, compress_list = adaptive("./ada*"+case+"*Jmax*",norm,
                                          #ref=file_ref,
                                          #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
                                          ref = field_ref, 
                                          file="q-dense_000001000000.h5",
                                          inifile=ini)
-
-# rootdir = "./equid*disc"+"*Jmax*"
-# error_equi,Jmax_equi = err_equidist("./equid*disc"+"*Jmax*",norm,
-#                                          #ref=file_ref,
-#                                          #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
-#                                          ref = "q_000000000000.h5", 
-#                                          file="q_000001000000.h5",
-#                                          inifile=ini)
+#%%
+rootdir = "./equi*pacman"+"*Jmax*"
+error_equi,Jmax_equi = err_equidist(rootdir,norm,
+                                          #ref=file_ref,
+                                          #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
+                                          ref = field_ref, 
+                                          file="q-dense_000001000000.h5",
+                                          inifile=ini)
 
 
 # perf_files = glob.glob( rootdir+"/"+"performan*" )
@@ -218,8 +233,8 @@ plt.minorticks_on()
 for j,level in enumerate(Jmax):
     if level>1:
         p=ax.loglog(eps_by_lvl[level],errors_by_lvl[level],lines[j%4] + markers[j], label=r"$ J_\mathrm{max}=%d $"%level)
-   #     ax.hlines(error_equi[j],np.min(eps),np.max(eps),linestyle=':',color=p[0].get_color(),alpha=1)
-lin= wt.logfit(eps_by_lvl[Jmax[-1]][1:5],errors_by_lvl[Jmax[-1]][1:5])
+        ax.hlines(error_equi[j],np.min(eps),np.max(eps),linestyle=':',color=p[0].get_color(),alpha=1)
+lin= wt.logfit(eps_by_lvl[Jmax[-3]][1:5],errors_by_lvl[Jmax[-3]][1:5])
 ax.loglog(eps, 10**(lin[1]) * eps**lin[0],'k--', label=r"$%1.1f\epsilon^{%1.1f}$"%(10**lin[1],lin[0]))
 ax.set_xlabel(r"threshold $\epsilon$"  )
 locmin = matplotlib.ticker.LogLocator(base=10.0,subs=(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=12)
@@ -266,7 +281,7 @@ error_list,Jmax_list,eps_list, compress_list = adaptive("./opt_eps*"+case+"*Jmax
                                          inifile=ini)
 
 
-
+# %%
 Jmax= np.unique(Jmax_list)
 eps = np.flip(np.unique(eps_list))
 errors_by_lvl =dict((el,[]) for el in Jmax)

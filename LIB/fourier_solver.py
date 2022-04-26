@@ -17,7 +17,7 @@ import numpy as np
 from numpy import pi, reshape, meshgrid, sin, cos
 from numpy.fft import fft,ifft,fft2,ifft2
 from time import perf_counter
-
+from fourier_tools import spectrum
 
 class params_class:
     def __init__(self, pde = "advection",dim = 2 ,L=[1,1] ,N = [2**7, 2**6], T=0.1, Nt=300 , case="bunsen_flame"):
@@ -31,7 +31,7 @@ class params_class:
         self.geom.K = [2*np.pi*np.fft.fftfreq(self.geom.N[k],d=self.geom.dX[k]) for k in range(dim)]
         self.geom.Xgrid = meshgrid(*self.geom.X)
         # init time
-        self.time.t = np.arange(0,self.time.T,self.time.dt)
+        self.time.t = np.arange(0,self.time.T+self.time.dt,self.time.dt)
         #self.advection_speed= 0.1#0.1 # velocity of moving vortex
         self.advection_speed = 0.1 # 0.1 # velocity of moving vortex
         #self.w0 = [45, 45]   # initial vorticity
@@ -391,12 +391,23 @@ if __name__ == "__main__":
     # choose pde [burgers,advection]
     pde = "react"
     case = "pacman"
-    Ngrid = [2**8,2**8]
-    T = 2
-    params = params_class(case=case, pde=pde, N=Ngrid, Nt = 200, T = T)
+    Ngrid = [2**11,2**11]
+    T = 1
+    params = params_class(case=case, pde=pde, N=Ngrid, Nt = 10, T = T)
     params,q = solve_FOM(params)
+    np.save("fft_pacman_ref_2048",q)
     
     #%%
     import matplotlib.pyplot as plt
-    plt.pcolormesh(params.geom.X[0],params.geom.X[1],q[...,10])
+    plt.pcolormesh(params.geom.X[0],params.geom.X[1],q[...,-1])
     plt.colorbar()
+    
+    # %%
+    from plot_utils import save_fig
+    for it,t in enumerate(params.time.t):
+        k, Ek = spectrum(q[::,::,it])
+        plt.loglog(k,Ek,color=[0.0,0.0,1-t/params.time.T],lw=0.5)
+    plt.xlabel(r"wave number $|k|$")
+    plt.ylabel(r"energy $E(|k|)$")    
+    plt.grid(which="both",linestyle=':')
+    save_fig("../imgs/energy_pacman.eps")

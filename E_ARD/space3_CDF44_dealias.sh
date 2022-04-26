@@ -4,6 +4,7 @@ ini="pacman.ini"
 bs=17
 
 JMAX=( 2 3 4 5 6 7 )
+EPS=( 1.0e-00 1.0e-01 1.0e-02 1.0e-03 1.0e-04 1.0e-05 1.0e-06 1.0e-07 1.0e-08 1.0e-09 1.0e-10 )
 #1.00000000e-02   6.15848211e-03   3.79269019e-03
 #2.33572147e-03   1.43844989e-03   8.85866790e-04
 #5.45559478e-04   3.35981829e-04   2.06913808e-04
@@ -14,21 +15,23 @@ JMAX=( 2 3 4 5 6 7 )
 
 # as Jmax=4 and eps=1e-6 makes no sense, you can skip it. just the smallest 1e-7 value is contained!
 #EPS_max=( 20 20 20 20 20 20 )
-EPS_max=( 11 11 11 11 11 11 11 )
+EPS_max=( 10 10 10 10 10 10 10 )
 
-pre="equi"
+pre="adaptive_CDF44_dealias"
 name="pacman"
 
 # delete all data:
 rm -rf ${pre}_*
 
 
-for (( a=0; a<=7; a++ ))
+for (( a=0; a<=5; a++ ))
 do
+	for (( j=0; j<=${EPS_max[$a]}; j++ ))
+	do
 
-		dir=${pre}_${name}_Bs${bs}_Jmax${JMAX[$a]}
+		dir=${pre}_${name}_Bs${bs}_Jmax${JMAX[$a]}_eps${EPS[$j]}
 
-		if [ ! -f "$dir"/q_000000100000.h5 ]; then
+		if [ ! -f "$dir"/phi_000002500000.h5 ]; then
 			mkdir $dir
 			echo $dir
 			cd $dir
@@ -38,17 +41,21 @@ do
 
 			../replace_ini_value.sh $ini Discretization order_discretization FD_4th_central_optimized
 			../replace_ini_value.sh $ini Discretization order_predictor multiresolution_4th
+			../replace_ini_value.sh $ini Wavelet transform_type biorthogonal 
+			../replace_ini_value.sh $ini Blocks force_maxlevel_dealiasing 1
 
-			../replace_ini_value.sh $ini Blocks adapt_mesh 0
-			../replace_ini_value.sh $ini Blocks adapt_inicond 0
+			../replace_ini_value.sh $ini Blocks adapt_mesh 1
+			../replace_ini_value.sh $ini Blocks adapt_inicond 1
+			../replace_ini_value.sh $ini Blocks eps ${EPS[$j]}
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
 			../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
 			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
-			../replace_ini_value.sh $ini Blocks min_treelevel ${JMAX[$a]}
+			../replace_ini_value.sh $ini Blocks min_treelevel 1
 
 			$mpi ./wabbit $ini --memory=10.0GB
 			cd ..
 		else
 			echo "Test already done:" $dir
 		fi
+	done
 done
