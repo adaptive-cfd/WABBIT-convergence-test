@@ -43,6 +43,7 @@ do
 			../replace_ini_value.sh $ini Discretization order_predictor multiresolution_4th
 			../replace_ini_value.sh $ini Wavelet transform_type biorthogonal 
 			../replace_ini_value.sh $ini Blocks force_maxlevel_dealiasing 0
+			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
 
 			../replace_ini_value.sh $ini Blocks adapt_mesh 1
 			../replace_ini_value.sh $ini Blocks adapt_inicond 1

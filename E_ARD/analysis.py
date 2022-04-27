@@ -40,7 +40,7 @@ fc = farge_colormaps.farge_colormap_multi( taille=600,limite_faible_fort=0.2, et
 # %% get the data
 quantity="q_"
 plt.close("all")
-case = "CDF44_pacman"
+case = "CDF44_dealias_pacman"
 ini = "pacman.ini"
 eps_dir="./adaptive_"+ case +"_Bs17_Jmax7*eps1.0e-06/"
 norm = 2
@@ -151,7 +151,7 @@ def err_equidist(rootdir, norm, ref, file, inifile="blob-convection.ini"):
 
 rootdir = "./adap*"+case+"*"
 dirsx = glob.glob( rootdir )
-# %%
+
 for d in dirsx:
     chdir_make_equidistant(d,"q_000000000000.h5",7,wdir="../../../")
     chdir_make_equidistant(d,"q_000001000000.h5",7,wdir="../../../")
@@ -165,8 +165,7 @@ for d in dirsx:
 
 # %%    
     
-field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_pacman_Bs17_Jmax7_eps1.0e-09/q-dense_000000000000.h5")
-#field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_pacman_Bs17_Jmax7_eps1.0e-08/q-dense_000000000000.h5")
+field, box, dx, X = wt.to_dense_grid("./adapt*"+case+"_Bs17_Jmax7_eps1.0e-08/q-dense_000001000000.h5")
 # %%
 Xgrid = np.meshgrid(*X)
 
@@ -205,9 +204,9 @@ error_equi,Jmax_equi = err_equidist(rootdir,norm,
                                           inifile=ini)
 
 
-# perf_files = glob.glob( rootdir+"/"+"performan*" )
-# dat_list_equi = read_performance_file( perf_files)
-# tcpu_list_equi = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list_equi]
+perf_files = glob.glob( rootdir+"/"+"performan*" )
+dat_list_equi = read_performance_file( perf_files)
+tcpu_list_equi = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list_equi]
 
 Jmax= np.unique(Jmax_list)
 eps = np.flip(np.unique(eps_list))
@@ -248,18 +247,11 @@ plt.grid(which="both",linestyle=':')
 save_fig(case+"_errors_vs_eps",strict=True)
 
 
-rootdir = "./equid*disc"+"*Jmax*"
-# error_equi,Jmax_equi = err_equidist("./equid*disc"+"*Jmax*",norm,
-#                                          #ref=file_ref,
-#                                          #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
-#                                          ref = "q_000000000000.h5", 
-#                                          file="q_000001000000.h5",
-#                                          inifile=ini)#eps_opt = np.asarray([10**(1/lin[0]*np.log10(err/10**(lin[1]))) for err in error_equi])
-#print(eps_opt)
-#for epsilon in eps_opt:
- #   plt.vlines(epsilon,np.min(eps),np.max(eps),linestyle="--",color='k')
-# plt.xlim([0.5e-4,1])
-# plt.ylim([0.5e-5,1])
+eps_opt = np.asarray([10**(1/lin[0]*np.log10(err/10**(lin[1]))) for err in error_equi])
+print(eps_opt)
+for epsilon in eps_opt:
+    plt.vlines(epsilon,np.min(eps),np.max(eps),linestyle="--",color='k')
+
 # %%
 
 rootdir = "./opt_eps*"+case+"*"
