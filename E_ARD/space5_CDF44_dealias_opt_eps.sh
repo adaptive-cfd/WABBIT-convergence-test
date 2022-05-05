@@ -1,10 +1,10 @@
 #!/bin/bash
 mpi="mpirun -np 8"
-ini="disc-convection.ini"
+ini="pacman.ini"
 bs=17
 
 JMAX=( 2 3 4 5 6 7 )
-EPS=( 3.5e-02 1.2e-02 1.9e-03 1.2e-04 3.5e-06 8.0e-08 )
+EPS=( 1.1e-01 9.5e-03 4.0e-04 1.2e-05 9.2e-07 )
 #1.00000000e-02   6.15848211e-03   3.79269019e-03
 #2.33572147e-03   1.43844989e-03   8.85866790e-04
 #5.45559478e-04   3.35981829e-04   2.06913808e-04
@@ -14,14 +14,14 @@ EPS=( 3.5e-02 1.2e-02 1.9e-03 1.2e-04 3.5e-06 8.0e-08 )
 #1.62377674e-06   1.00000000e-06)
 
 # as Jmax=4 and eps=1e-6 makes no sense, you can skip it. just the smallest 1e-7 value is contained!
-pre="opt_eps_CDF44"
-name="disc"
+pre="opt_eps_CDF44_dealias"
+name="pacman"
 
 # delete all data:
 rm -rf ${pre}_*
 
 
-for (( a=0; a<=5; a++ ))
+for (( a=0; a<=4; a++ ))
 do
 
 		dir=${pre}_${name}_Bs${bs}_Jmax${JMAX[$a]}_eps${EPS[$a]}
@@ -43,7 +43,8 @@ do
 			../replace_ini_value.sh $ini Blocks eps ${EPS[$a]}
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
 			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
-			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
+			../replace_ini_value.sh $ini Blocks force_maxlevel_dealiasing 1
+                        ../replace_ini_value.sh $ini Blocks max_treelevel $((${JMAX[$a]} + 1))
 			../replace_ini_value.sh $ini Blocks min_treelevel 1
 
 			$mpi ./wabbit $ini --memory=3.0GB

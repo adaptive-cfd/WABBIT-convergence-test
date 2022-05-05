@@ -38,12 +38,12 @@ do
 
 			../replace_ini_value.sh $ini Discretization order_discretization FD_4th_central_optimized
 			../replace_ini_value.sh $ini Discretization order_predictor multiresolution_4th
-                        ../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
 
 			../replace_ini_value.sh $ini Blocks adapt_mesh 0
 			../replace_ini_value.sh $ini Blocks adapt_inicond 0
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
-			../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
+			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
+			../replace_ini_value.sh $ini Blocks force_maxlevel_dealiasing 0
 			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
 			../replace_ini_value.sh $ini Blocks min_treelevel ${JMAX[$a]}
 

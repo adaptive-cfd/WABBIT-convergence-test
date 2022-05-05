@@ -364,7 +364,7 @@ def solve_FOM(params):
     time = params.time.t
     #q = timesteper(rhs, [time[0], time[-1]], q0, t_vec=time, tau=params.odeint.timestep).T
     #nrhs = 4*len(time)
-    ret = ode45(rhs, [time[0], time[-1]], q0, method="RK45",rtol=1e-9 , t_eval=time)
+    ret = ode45(rhs, [time[0], time[-1]], q0, method="RK45",rtol=1e-12 , t_eval=time)
     q = ret.y
     nrhs = ret.nfev
     time_odeint = perf_counter()-time_odeint

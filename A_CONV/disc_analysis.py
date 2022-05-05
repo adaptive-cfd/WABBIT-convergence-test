@@ -168,6 +168,23 @@ def disc_analytic2wabbit(time, Jmax, L=[1,1], Bs=[17,17], dir = "./"):
 
 
 
+# %%
+field, box, dx, X = wt.to_dense_grid("./adaptive_"+case+"_Bs17_Jmax7_eps1.0e-10/q-dense_000001000000.h5")
+Xgrid = np.meshgrid(*X)
+L = [1,1]
+time = 0
+R = np.asarray(L[0])*0.15
+lambd = np.asarray(L[0])*0.005
+x0    = [L[0]/2 + L[0]/4*np.cos(2*pi*time), L[1]/2 + L[1]/4*np.sin(2*pi*time)]
+field_ref = np.sqrt((Xgrid[0]-x0[0])**2 + (Xgrid[1]-x0[1])**2)-R
+field_ref =  1/(1+np.exp( field_ref /lambd))
+#field_ref=  0.5*(1-np.tanh( field_ref /lambd))
+
+
+plt.pcolormesh(field_ref-field)
+plt.colorbar()
+plt.show()
+print(np.linalg.norm(field-field_ref)/np.linalg.norm(field_ref))
 # %% 
 
 rootdir = "./adap*"+case+"*"

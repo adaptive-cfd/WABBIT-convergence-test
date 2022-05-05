@@ -36,16 +36,17 @@ do
 
 			../replace_ini_value.sh $ini Discretization order_discretization FD_4th_central_optimized
 			../replace_ini_value.sh $ini Discretization order_predictor multiresolution_4th
+			../replace_ini_value.sh $ini Wavelet transform_type biorthogonal 
 
 			../replace_ini_value.sh $ini Blocks adapt_mesh 1
 			../replace_ini_value.sh $ini Blocks adapt_inicond 1
 			../replace_ini_value.sh $ini Blocks eps ${EPS[$a]}
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
-			../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
+			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
 			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
 			../replace_ini_value.sh $ini Blocks min_treelevel 1
 
-			$mpi ./wabbit $ini --memory=10.0GB
+			$mpi ./wabbit $ini --memory=3.0GB
 			cd ..
 		else
 			echo "Test already done:" $dir

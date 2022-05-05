@@ -41,8 +41,9 @@ fc = farge_colormaps.farge_colormap_multi( taille=600,limite_faible_fort=0.2, et
 quantity="q_"
 plt.close("all")
 case = "CDF44_dealias_pacman"
+#case = "CDF44_pacman"
 ini = "pacman.ini"
-eps_dir="./adaptive_"+ case +"_Bs17_Jmax7*eps1.0e-06/"
+eps_dir="./adaptive_"+ case +"_Bs17_Jmax7*eps1.0e-04_iter1/"
 norm = 2
 # %%
 
@@ -165,7 +166,7 @@ for d in dirsx:
 
 # %%    
     
-field, box, dx, X = wt.to_dense_grid("./adapt*"+case+"_Bs17_Jmax7_eps1.0e-08/q-dense_000001000000.h5")
+field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_dealias_pacman_Bs17_Jmax7_eps1.0e-04_coarsewins/q-dense_000001000000.h5")
 # %%
 Xgrid = np.meshgrid(*X)
 
@@ -182,11 +183,12 @@ print(np.linalg.norm(field-field_ref)/np.linalg.norm(field_ref))
 q_ref = np.load("fft_pacman_ref_2048.npy")
 #tcpu_fft=6775.762
 field_ref = q_ref[...,-1]
-plt.pcolormesh(field_ref-field)
+plt.pcolormesh(abs(field_ref-field))
+plt.clim(vmin=0,vmax=0.8e-4)
 plt.colorbar()
-plt.show()
 print(np.linalg.norm(field-field_ref)/np.linalg.norm(field_ref))
-
+plt.savefig("error_eps1e-4_iter1.png")
+plt.show()
 #%%
 error_list,Jmax_list,eps_list, compress_list = adaptive("./ada*"+case+"*Jmax*",norm,
                                          #ref=file_ref,
@@ -195,7 +197,7 @@ error_list,Jmax_list,eps_list, compress_list = adaptive("./ada*"+case+"*Jmax*",n
                                          file="q-dense_000001000000.h5",
                                          inifile=ini)
 #%%
-rootdir = "./equi*pacman"+"*Jmax*"
+rootdir = "./equi_dealias*pacman"+"*Jmax*"
 error_equi,Jmax_equi = err_equidist(rootdir,norm,
                                           #ref=file_ref,
                                           #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
@@ -248,9 +250,9 @@ save_fig(case+"_errors_vs_eps",strict=True)
 
 
 eps_opt = np.asarray([10**(1/lin[0]*np.log10(err/10**(lin[1]))) for err in error_equi])
-print(eps_opt)
-for epsilon in eps_opt:
-    plt.vlines(epsilon,np.min(eps),np.max(eps),linestyle="--",color='k')
+# print(eps_opt)
+# for epsilon in eps_opt:
+#     plt.vlines(epsilon,np.min(eps),np.max(eps),linestyle="--",color='k')
 
 # %%
 
@@ -312,15 +314,16 @@ table = np.stack((Jmax,np.concatenate(list(DOFs_by_lvl.values())),np.concatenate
 print(tabulate(table,headers=["max. level","DOFs (adapt)", "rel. error","cpu-time (s)","DOFs (equi)", "rel. error","cpu-time (s)"], tablefmt='latex_booktabs',floatfmt=(".0f", ".0f", ".1e", ".0f",".0f", ".1e",".0f")))
 
 # %% spatial convergence
+idx_jmax = -2
 
+dx = np.asarray([1/(2**(j)*16) for j in Jmax[:idx_jmax]])
 
-dx = np.asarray([1/(2**(j)*16) for j in Jmax])
-
-errors = [errors_by_lvl[lvl][-1] for lvl in Jmax]
+errors = [errors_by_lvl[lvl][-3] for lvl in Jmax[:idx_jmax]]
 lin = wt.logfit(dx, errors)
 plt.loglog(dx, errors,'-o',label="adaptive $\epsilon^\mathrm{opt}(J_\mathrm{max})$")
 wt.add_convergence_labels(dx, errors)
-plt.loglog(dx,error_equi,'--',label="equidistant")
+plt.loglog(dx,error_equi[:idx_jmax],'--',label="equidistant")
+#wt.add_convergence_labels(dx, _equi)
 #plt.loglog(dx, 10**(lin[1]) * dx**lin[0],'k--', label=r"$\mathcal{O}(\Delta x^{%1.1f}$)"%lin[0])
 plt.xlabel(r"lattice spacing $h$")
 plt.grid(which="both",linestyle=':')
