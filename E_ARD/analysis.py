@@ -43,12 +43,15 @@ plt.close("all")
 case = "CDF44_dealias_pacman"
 #case = "CDF44_pacman"
 ini = "pacman.ini"
-eps_dir="./adaptive_"+ case +"_Bs17_Jmax7*eps1.0e-04_iter1/"
+eps_dir="./adaptive_"+ case +"_Bs17_Jmax6_eps2.8*/"
 norm = 2
+Bs = 17
 # %%
 
 files = glob.glob(eps_dir+'/'+quantity+'*.h5')
+files = glob.glob('opt_eps*Jmax6*/*.h5')
 files.sort()
+
 for file in files:
     plt_file = file.replace('h5','png')
     if (os.path.isfile(plt_file)):
@@ -146,6 +149,32 @@ def err_equidist(rootdir, norm, ref, file, inifile="blob-convection.ini"):
 
     return e,Jmax_list
 
+def evaluate_performance(rootdir,field_ref, ini="pacman.ini", h5_file_name="q_000001000000.h5", norm=2):
+    
+    dirsx = glob.glob( rootdir )
+    for d in dirsx:
+        chdir_make_equidistant(d,"q_000001000000.h5",7,wdir="../../../")
+    
+    
+    perf_files = list(np.sort(glob.glob( rootdir+"/"+"performan*" )))
+    dat_list = read_performance_file( perf_files)
+    tcpu_list = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list]
+    DOFs = [np.mean(dat[:,3])*(Bs-1)**2 for dat in dat_list]
+    
+    file_dense = h5_file_name.replace("q", "q-dense")
+    error_list,Jmax_list,eps_list, compress_list = adaptive(rootdir+"*Jmax*",norm,
+                                             #ref=file_ref,
+                                             #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
+                                             ref = field_ref, 
+                                             file=file_dense,
+                                             inifile=ini)
+    ind = np.argsort(Jmax_list)
+    error_list = [error_list[i] for i in ind]
+    eps_list = [eps_list[i] for i in ind]
+    compress_list = [compress_list[i] for i in ind]
+    Jmax_list = [Jmax_list[i] for i in ind]
+
+    return {"Jmax": Jmax_list,"error":error_list, "eps":eps_list, "DOF": DOFs, "tcpu":tcpu_list, "performance_files":perf_files}
 
 
 # %% 
@@ -166,7 +195,7 @@ for d in dirsx:
 
 # %%    
     
-field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_dealias_pacman_Bs17_Jmax7_eps1.0e-04_coarsewins/q-dense_000001000000.h5")
+field, box, dx, X = wt.to_dense_grid("./adaptive_CDF44_dealias_pacman_Bs17_Jmax7_eps1.0e-04/q-dense_000001000000.h5")
 # %%
 Xgrid = np.meshgrid(*X)
 
@@ -197,18 +226,23 @@ error_list,Jmax_list,eps_list, compress_list = adaptive("./ada*"+case+"*Jmax*",n
                                          file="q-dense_000001000000.h5",
                                          inifile=ini)
 #%%
-rootdir = "./equi_dealias*pacman"+"*Jmax*"
+rootdir = "./equi_*deal*pacman"+"*Jmax*"
+#rootdir = "./equi_pacman"+"*Jmax*"
 error_equi,Jmax_equi = err_equidist(rootdir,norm,
                                           #ref=file_ref,
                                           #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
                                           ref = field_ref, 
                                           file="q-dense_000001000000.h5",
                                           inifile=ini)
+ind = np.argsort(Jmax_equi)
+error_equi = [error_equi[i] for i in ind]
+Jmax_equi = [Jmax_equi[i] for i in ind]
 
 
-perf_files = glob.glob( rootdir+"/"+"performan*" )
-dat_list_equi = read_performance_file( perf_files)
+perf_files_equi = list(np.sort(glob.glob( rootdir+"/"+"performan*" )))
+dat_list_equi = read_performance_file( perf_files_equi)
 tcpu_list_equi = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list_equi]
+DOFs_equi = [np.max(dat[:,3])*(Bs-1)**2 for dat in dat_list_equi]
 
 Jmax= np.unique(Jmax_list)
 eps = np.flip(np.unique(eps_list))
@@ -232,7 +266,7 @@ ax.set_yscale('log')
 ax.set_xscale('log')
 plt.minorticks_on()
 for j,level in enumerate(Jmax):
-    if level>1:
+    if level<7:
         p=ax.loglog(eps_by_lvl[level],errors_by_lvl[level],lines[j%4] + markers[j], label=r"$ J_\mathrm{max}=%d $"%level)
         ax.hlines(error_equi[j],np.min(eps),np.max(eps),linestyle=':',color=p[0].get_color(),alpha=1)
 lin= wt.logfit(eps_by_lvl[Jmax[-3]][1:5],errors_by_lvl[Jmax[-3]][1:5])
@@ -250,6 +284,7 @@ save_fig(case+"_errors_vs_eps",strict=True)
 
 
 eps_opt = np.asarray([10**(1/lin[0]*np.log10(err/10**(lin[1]))) for err in error_equi])
+print(eps_opt)
 # print(eps_opt)
 # for epsilon in eps_opt:
 #     plt.vlines(epsilon,np.min(eps),np.max(eps),linestyle="--",color='k')
@@ -263,28 +298,18 @@ for d in dirsx:
     chdir_make_equidistant(d,"q_000001000000.h5",7,wdir="../../../")
 
 
-perf_files = glob.glob( rootdir+"/"+"performan*" )
-dat_list = read_performance_file( perf_files)
-tcpu_list = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list]
+perf_files_opt = list(np.sort(glob.glob( rootdir+"/"+"performan*" )))
+dat_list = read_performance_file( perf_files_opt)
+tcpu_list_opt = [sum(dat[:,2]*dat[:,-1]) for dat in dat_list]
+DOFs_opt = [np.mean(dat[:,3])*(Bs-1)**2 for dat in dat_list]
 
-error_list,Jmax_list,eps_list, compress_list = adaptive("./opt_eps*"+case+"*Jmax*",norm,
+error_list_opt,Jmax_list_opt,eps_list_opt, compress_list_opt = adaptive("./opt_eps*"+case+"*Jmax*",norm,
                                          #ref=file_ref,
                                          #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
-                                         ref = "disc_ref_Jmax7/q_000000000000.h5", 
+                                         ref = field_ref, 
                                          file="q-dense_000001000000.h5",
                                          inifile=ini)
 
-
-# %%
-Jmax= np.unique(Jmax_list)
-eps = np.flip(np.unique(eps_list))
-errors_by_lvl =dict((el,[]) for el in Jmax)
-eps_by_lvl =dict((el,[]) for el in Jmax)
-DOFs_by_lvl =dict((el,[]) for el in Jmax)
-for k, (lvl,epsilon,err) in enumerate(zip(Jmax_list,eps_list,error_list)):
-    eps_by_lvl[lvl].append(epsilon)
-    errors_by_lvl[lvl].append(err)
-    DOFs_by_lvl[lvl].append((2**7*compress_list[k]*2**7)*16**2)
 
 
 # %% ERROR vs DOFS
@@ -295,9 +320,9 @@ lines =['-', '--', '-.', ':']
 markers = list(Line2D.markers.keys())
 
 fig,ax = plt.subplots()
-for j,level in enumerate(Jmax):
+for j,level in enumerate(Jmax_list_opt):
     if level>1:
-        ax.semilogy(DOFs_by_lvl[level]/(2**level*2**level)/16**2,errors_by_lvl[level],'o', label=r"$ J_\mathrm{max}=%d $"%level)
+        ax.semilogy(DOFs_opt[j]/DOFs_equi[j],error_list_opt[j],'o', label=r"$ J_\mathrm{max}=%d $"%level)
     
 #ax.loglog(eps,eps, 'k--', label = r"$\epsilon$")
 ax.set_xlabel(r"compression factor"  )
@@ -307,72 +332,44 @@ plt.grid(which="both",linestyle=':')
 save_fig(case+"_errors_vs_DOFS",strict=True)
 # plt.xlim([0.5e-4,1])
 # plt.ylim([0.5e-5,1])
-DOFs_equi = [(2**lvl*16)**2 for lvl in Jmax]
+
 
 #tcpu_list_equi[-1] = np.size(dat_list[-1],0)*tcpu_list_equi[-1]/np.size(dat_list_equi[-1],0)
-table = np.stack((Jmax,np.concatenate(list(DOFs_by_lvl.values())),np.concatenate(list(errors_by_lvl.values())),tcpu_list,DOFs_equi,error_equi,tcpu_list_equi),axis=1)
-print(tabulate(table,headers=["max. level","DOFs (adapt)", "rel. error","cpu-time (s)","DOFs (equi)", "rel. error","cpu-time (s)"], tablefmt='latex_booktabs',floatfmt=(".0f", ".0f", ".1e", ".0f",".0f", ".1e",".0f")))
+table = np.stack((Jmax_list_opt,DOFs_opt,error_list_opt,tcpu_list_opt,DOFs_equi,error_equi,tcpu_list_equi),axis=1)
+table_string = tabulate(table,headers=["$\Jmax$","DOF (adapt)", "rel. error","$\tcpu$ (s)","DOF (equi)", "rel. error","$\tcpu$ (s)"], tablefmt='latex_booktabs',floatfmt=(".0f", ".0f", ".1e", ".0f",".0f", ".1e",".0f"))
+print(table_string)
+with open(case+"_DOF_error.tabl.tex", "w") as text_file:
+    text_file.write(table_string)
 
-# %% spatial convergence
-idx_jmax = -2
+# %% spatial convergence for dealiase and without
 
-dx = np.asarray([1/(2**(j)*16) for j in Jmax[:idx_jmax]])
+opt_CDF44_deailas = evaluate_performance("opt_eps_CDF44_dealias*",field_ref, ini="pacman.ini", h5_file_name="q_000001000000.h5", norm=2)
+opt_CDF44 = evaluate_performance("opt_eps_CDF44_pacman*",field_ref, ini="pacman.ini", h5_file_name="q_000001000000.h5", norm=2)
+equi_CDF44 = evaluate_performance("equi_pacman*",field_ref, ini="pacman.ini", h5_file_name="q_000001000000.h5", norm=2)
+equi_CDF44_deailas = evaluate_performance("equi_dealias_pacman*",field_ref, ini="pacman.ini", h5_file_name="q_000001000000.h5", norm=2)
 
-errors = [errors_by_lvl[lvl][-3] for lvl in Jmax[:idx_jmax]]
-lin = wt.logfit(dx, errors)
-plt.loglog(dx, errors,'-o',label="adaptive $\epsilon^\mathrm{opt}(J_\mathrm{max})$")
-wt.add_convergence_labels(dx, errors)
-plt.loglog(dx,error_equi[:idx_jmax],'--',label="equidistant")
-#wt.add_convergence_labels(dx, _equi)
-#plt.loglog(dx, 10**(lin[1]) * dx**lin[0],'k--', label=r"$\mathcal{O}(\Delta x^{%1.1f}$)"%lin[0])
+# %%
+configs_dicts = {"CDF44 $\epsilon^\\mathrm{opt}$ dealias":opt_CDF44_deailas,
+                "equidistant dealias":equi_CDF44_deailas,
+                "CDF44 $\epsilon^\\mathrm{opt}$"        :opt_CDF44,
+                "equidistant":equi_CDF44}
+line_style =["+-","o--","<-",">--"]
+dealias = [1,1,0,0]
+for k,key in enumerate(configs_dicts):
+    print("config:" , key)
+    dat = configs_dicts[key]
+    dx = np.asarray([1/(2**(j-dealias[k])*(Bs-1)) for j in dat["Jmax"]])
+    errors = dat["error"]
+    lin = wt.logfit(dx, errors)
+    plt.loglog(dx, errors,line_style[k],label=key)
+    
+plt.loglog(dx,400000*dx**4,'k-',label="$\mathcal{O}({h^4})$")
+#wt.add_convergence_labels(dx,400000*dx**4)
+plt.legend(loc=2,frameon=False)
 plt.xlabel(r"lattice spacing $h$")
-plt.grid(which="both",linestyle=':')
 plt.ylabel(r"$\Vert q-q^{\epsilon,\Delta t,h}\Vert_%d/\Vert q\Vert_%d$"%(norm,norm))
-plt.legend()
-save_fig(case+"_errors_vs_lattice_spacing",strict=True)
+plt.grid(which="both",linestyle=':')
+
+save_fig("pacman_errors_vs_lattice_spacing",strict=True)
 
 # %% 
-norm = 2
-file_ref = disc_analytic2wabbit(0, 6)
-error_list,Jmax_list,eps_list, compression_list = adaptive("./ada*"+case+"*Jmax*",norm,
-                                         #ref=file_ref,
-                                         #ref = "adaptive_"+case+"_Bs17_Jmax5_eps1.0e-10/q-dense_000000000000.h5", 
-                                         ref = "disc_ref_Jmax7/q_000000000000.h5", 
-                                         file="q-dense_000000000000.h5",
-                                         inifile=ini)
-Jmax= np.unique(Jmax_list)
-eps = np.flip(np.unique(eps_list))
-errors_by_lvl =dict((el,[]) for el in Jmax)
-eps_by_lvl =dict((el,[]) for el in Jmax)
-for k, (lvl,epsilon,err) in enumerate(zip(Jmax_list,eps_list,error_list)):
-    eps_by_lvl[lvl].append(epsilon)
-    errors_by_lvl[lvl].append(err)
-
-# %%
-from matplotlib.lines import Line2D
-from matplotlib import lines
-lines =['-', '--', '-.', ':']
-markers = list(Line2D.markers.keys())
-
-for j,level in enumerate(Jmax):
-    if level>1:
-        plt.loglog(eps_by_lvl[level],errors_by_lvl[level],lines[j%4] + markers[j], label=r"$ J_\mathrm{max}=%d $"%level)
-    
-plt.loglog(eps,eps, 'k--', label = r"$\epsilon$")
-plt.xlabel(r"$\epsilon$"  )
-plt.ylabel(r"$\Vert q-q^{\epsilon}\Vert_%d/\Vert q\Vert_%d$"%(norm,norm))
-plt.legend()
-save_fig(case+"_compression_errors_vs_eps",strict=True)
-# plt.xlim([0.5e-4,1])
-# plt.ylim([0.5e-5,1])
-
-# %%
-perf_dat = np.loadtxt("adaptive_CDF44_disc_Bs17_Jmax7_eps1.0e-05/performance.t")
-#perf_dat = np.loadtxt("stability_CDF44_disc_Bs17_Jmax7_eps1.0e-07/performance.t")
-
-plt.plot(perf_dat[::10,0],perf_dat[::10,4])
-#perf_dat = np.loadtxt("adaptive_CDF44_disc_Bs17_Jmax7_eps1.0e-05/performance.t")
-plt.xlabel(r"time $t$")
-plt.ylabel("Number of Blocks")
-plt.xlim([0,1])
-save_fig(case+"_Nblocks_vs_time",strict=True)

@@ -3,8 +3,8 @@ mpi="mpirun -np 8"
 ini="disc-convection.ini"
 bs=17
 
-JMAX=( 7 )
-EPS=( 1.0e-08 1.0e-09 1.0e-10 )
+JMAX=( 2 3 4 5 6 7 8 )
+EPS=( 1.0e-01 1.0e-02 1.0e-03 1.0e-04 1.0e-05 1.0e-06 1.0e-7 1.0e-08 1.0e-09 1.0e-10 )
 #1.00000000e-02   6.15848211e-03   3.79269019e-03
 #2.33572147e-03   1.43844989e-03   8.85866790e-04
 #5.45559478e-04   3.35981829e-04   2.06913808e-04
@@ -15,7 +15,7 @@ EPS=( 1.0e-08 1.0e-09 1.0e-10 )
 
 # as Jmax=4 and eps=1e-6 makes no sense, you can skip it. just the smallest 1e-7 value is contained!
 #EPS_max=( 20 20 20 20 20 20 )
-EPS_max=( 3 )
+EPS_max=( 10 10 10 10 10 10 10 )
 
 pre="adaptive_CDF44"
 name="disc"
@@ -46,7 +46,7 @@ do
 			../replace_ini_value.sh $ini Blocks adapt_inicond 1
 			../replace_ini_value.sh $ini Blocks eps ${EPS[$j]}
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
-			../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
+			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
 			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
 			../replace_ini_value.sh $ini Blocks min_treelevel 1
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-mpi="mpirun -np 6"
+mpi="mpirun -np "
 ini="pacman.ini"
 bs=17
 

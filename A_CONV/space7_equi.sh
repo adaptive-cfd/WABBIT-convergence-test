@@ -3,7 +3,7 @@ mpi="mpirun -np 8"
 ini="disc-convection.ini"
 bs=17
 
-JMAX=( 2 3 4 5 6 7 )
+JMAX=( 2 3 4 5 6 7 8)
 EPS=( 1.0e-08 )
 #1.00000000e-02   6.15848211e-03   3.79269019e-03
 #2.33572147e-03   1.43844989e-03   8.85866790e-04
@@ -45,7 +45,7 @@ do
 			../replace_ini_value.sh $ini Blocks adapt_mesh 0
 			../replace_ini_value.sh $ini Blocks adapt_inicond 0
 			../replace_ini_value.sh $ini Blocks number_block_nodes $bs
-			../replace_ini_value.sh $ini Blocks number_ghost_nodes 4
+			../replace_ini_value.sh $ini Blocks number_ghost_nodes 6
 			../replace_ini_value.sh $ini Blocks max_treelevel ${JMAX[$a]}
 			../replace_ini_value.sh $ini Blocks min_treelevel ${JMAX[$a]}
 
